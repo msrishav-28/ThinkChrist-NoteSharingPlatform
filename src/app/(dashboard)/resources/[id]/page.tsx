@@ -13,8 +13,8 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { Resource } from '@/types'
 import { formatBytes, formatDate } from '@/lib/utils'
-import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/lib/hooks/use-toast'
+import { useAuth } from '@/lib/hooks/use-auth'
 
 export default function ResourceViewPage() {
   const params = useParams()

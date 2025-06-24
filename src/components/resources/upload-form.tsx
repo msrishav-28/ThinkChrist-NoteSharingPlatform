@@ -17,9 +17,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Upload, FileIcon, X, Loader2 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/lib/hooks/use-auth'
 import { getDepartments, formatBytes } from '@/lib/utils'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB

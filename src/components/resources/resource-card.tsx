@@ -11,9 +11,9 @@ import {
 } from 'lucide-react'
 import { Resource } from '@/types'
 import { formatBytes, formatDate } from '@/lib/utils'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/lib/hooks/use-auth'
 
 interface ResourceCardProps {
   resource: Resource
