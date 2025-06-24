@@ -1,10 +1,27 @@
+// next.config.js (Updated with proper configuration)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['your-supabase-project.supabase.co'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
   experimental: {
-    serverActions: true,
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
+  },
+  // Ensure proper error handling
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
   },
 }
 

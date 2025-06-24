@@ -1,88 +1,92 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { searchParams } = new URL(request.url)
-    const department = searchParams.get('department')
-    const semester = searchParams.get('semester')
-    const search = searchParams.get('search')
-    const sortBy = searchParams.get('sortBy') || 'recent'
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = 12
-
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     
-    // Build query
-    let query = supabase
+    const { data: resource, error } = await supabase
       .from('resources')
       .select(`
         *,
-        uploader:users!uploaded_by(id, full_name),
-        user_vote:votes(vote_type)
-      `, { count: 'exact' })
+        uploader:users!uploaded_by(id, full_name, department)
+      `)
+      .eq('id', params.id)
+      .single()
 
-    // Apply filters
-    if (department) {
-      query = query.eq('department', department)
-    }
-    if (semester) {
-      query = query.eq('semester', parseInt(semester))
-    }
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+    if (error) {
+      return NextResponse.json({ error: 'Resource not found' }, { status: 404 })
     }
 
-    // Apply sorting
-    switch (sortBy) {
-      case 'popular':
-        query = query.order('upvotes', { ascending: false })
-        break
-      case 'downloads':
-        query = query.order('downloads', { ascending: false })
-        break
-      case 'upvotes':
-        query = query.order('upvotes', { ascending: false })
-        break
-      default:
-        query = query.order('created_at', { ascending: false })
+    // Get user vote if logged in
+    if (user) {
+      const { data: vote } = await supabase
+        .from('votes')
+        .select('vote_type')
+        .match({ user_id: user.id, resource_id: params.id })
+        .single()
+      
+      if (vote) {
+        resource.user_vote = vote.vote_type
+      }
     }
 
-    // Apply pagination
-    const start = (page - 1) * limit
-    query = query.range(start, start + limit - 1)
+    return NextResponse.json(resource)
+  } catch (error) {
+    console.error('Resource fetch error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
-    const { data, error, count } = await query
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check ownership
+    const { data: resource } = await supabase
+      .from('resources')
+      .select('uploaded_by, file_url')
+      .eq('id', params.id)
+      .single()
+
+    if (!resource || resource.uploaded_by !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    // Delete from storage
+    const fileName = resource.file_url.split('/').pop()
+    if (fileName) {
+      await supabase.storage.from('resources').remove([fileName])
+    }
+
+    // Delete database record
+    const { error } = await supabase
+      .from('resources')
+      .delete()
+      .eq('id', params.id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Get current user's votes
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (user && data) {
-      const resourceIds = data.map(r => r.id)
-      const { data: userVotes } = await supabase
-        .from('votes')
-        .select('resource_id, vote_type')
-        .eq('user_id', user.id)
-        .in('resource_id', resourceIds)
-
-      // Map user votes to resources
-      const voteMap = new Map(userVotes?.map(v => [v.resource_id, v.vote_type]))
-      data.forEach(resource => {
-        resource.user_vote = voteMap.get(resource.id) || null
-      })
-    }
-
-    return NextResponse.json({
-      resources: data,
-      totalCount: count,
-      currentPage: page,
-      totalPages: Math.ceil((count || 0) / limit),
-    })
+    return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Delete error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
