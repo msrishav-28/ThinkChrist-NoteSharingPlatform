@@ -27,7 +27,32 @@ export function formatDate(date: string | Date) {
 }
 
 export function validateChristEmail(email: string) {
-  return email.endsWith('@christuniversity.in')
+  // List of valid email domains for different departments
+  const validDomains = [
+    '@btech.christuniversity.in',
+    '@mtech.christuniversity.in',
+    '@psych.christuniversity.in',
+    '@bba.christuniversity.in',
+    '@mba.christuniversity.in',
+    '@arch.christuniversity.in',
+    '@bsc.christuniversity.in',
+    '@msc.christuniversity.in',
+    '@ba.christuniversity.in',
+    '@ma.christuniversity.in',
+    '@bcom.christuniversity.in',
+    '@mcom.christuniversity.in',
+    '@bca.christuniversity.in',
+    '@mca.christuniversity.in',
+    '@law.christuniversity.in',
+    '@msw.christuniversity.in',
+    '@bed.christuniversity.in',
+    '@med.christuniversity.in',
+    '@phd.christuniversity.in',
+    '@christuniversity.in' // General domain as fallback
+  ];
+
+  // Check if email ends with any of the valid domains (case-insensitive)
+  return validDomains.some(domain => email.toLowerCase().endsWith(domain));
 }
 
 export function getDepartments() {

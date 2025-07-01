@@ -15,7 +15,7 @@ import { validateChristEmail, getDepartments } from '@/lib/utils'
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email').refine(validateChristEmail, {
-    message: 'Please use your Christ University email',
+    message: 'Please use your Christ University email (e.g., name@btech.christuniversity.in)',
   }),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -123,7 +123,7 @@ export function RegisterForm() {
           <div className="space-y-2">
             <Input
               type="email"
-              placeholder="your.name@christuniversity.in"
+              placeholder="yourname@dept.christuniversity.in"
               {...form.register('email')}
               disabled={loading}
             />

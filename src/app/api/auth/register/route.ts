@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     // Validate Christ email
     if (!validateChristEmail(email)) {
       return NextResponse.json(
-        { error: 'Please use your Christ University email' },
+        { error: 'Please use your Christ University email (e.g., name@btech.christuniversity.in)' },
         { status: 400 }
       )
     }
