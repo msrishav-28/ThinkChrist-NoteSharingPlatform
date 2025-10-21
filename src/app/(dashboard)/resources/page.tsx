@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ResourceCard } from '@/components/resources/resource-card'
-import { ResourceFilters } from '@/components/resources/resource-filters'
+import { ResourceCard, ResourceFilters } from '@/features/resources'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { Resource } from '@/types'

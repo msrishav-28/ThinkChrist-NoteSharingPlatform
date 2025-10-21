@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Resource } from '@/types'
 import { formatBytes, formatDate } from '@/lib/utils'
 import { useToast } from '@/lib/hooks/use-toast'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { useAuth } from '@/features/auth'
 
 export default function ResourceViewPage() {
   const params = useParams()
@@ -146,7 +146,7 @@ export default function ResourceViewPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <FileIcon className="h-4 w-4" />
-                  {formatBytes(resource.file_size)}
+                  {resource.file_size ? formatBytes(resource.file_size) : 'Unknown size'}
                 </span>
               </div>
             </div>
@@ -194,7 +194,7 @@ export default function ResourceViewPage() {
               <div className="flex justify-between py-2 border-b">
                 <span className="text-muted-foreground">File Type</span>
                 <span className="font-medium uppercase">
-                  {resource.file_type.split('/').pop() || 'Unknown'}
+                  {resource.file_type?.split('/').pop() || 'Unknown'}
                 </span>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { UploadForm } from '@/components/resources/upload-form'
+import { UploadForm } from '@/features/resources'
 
 export default function UploadPage() {
   return (

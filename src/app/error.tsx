@@ -13,7 +13,10 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error(error)
+    // Only log errors in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error(error)
+    }
   }, [error])
 
   return (
@@ -29,9 +32,11 @@ export default function Error({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {error.message || 'An unknown error occurred'}
-          </p>
+          {process.env.NODE_ENV === 'development' && (
+            <p className="text-sm text-muted-foreground">
+              {error.message || 'An unknown error occurred'}
+            </p>
+          )}
           <div className="flex gap-2">
             <Button onClick={reset}>Try again</Button>
             <Button variant="outline" onClick={() => window.location.href = '/'}>

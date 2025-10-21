@@ -10,11 +10,19 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser()
     const resourceId = params.id
 
-    // Increment download count
-    await supabase
+    // Get current download count and increment
+    const { data: resource } = await supabase
       .from('resources')
-      .update({ downloads: supabase.raw('downloads + 1') })
+      .select('downloads')
       .eq('id', resourceId)
+      .single()
+
+    if (resource) {
+      await supabase
+        .from('resources')
+        .update({ downloads: resource.downloads + 1 })
+        .eq('id', resourceId)
+    }
 
     // Track download if user is logged in
     if (user) {

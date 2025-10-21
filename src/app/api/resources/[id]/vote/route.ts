@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { gamificationEngine } from '@/lib/services/gamification'
 
 export async function POST(
   request: Request,
@@ -64,21 +65,26 @@ export async function POST(
       const field = vote_type === 'upvote' ? 'upvotes' : 'downvotes'
       await supabase.rpc(`increment_${field}`, { resource_id: resourceId })
 
-      // Add contribution
-      await supabase
-        .from('contributions')
-        .insert({
-          user_id: user.id,
-          type: 'vote',
-          resource_id: resourceId,
-          points_earned: 1,
-        })
+      // Get resource owner to award them points
+      const { data: resource } = await supabase
+        .from('resources')
+        .select('uploaded_by, resource_type')
+        .eq('id', resourceId)
+        .single()
 
-      // Update user points
-      await supabase.rpc('increment_user_points', { 
-        user_id: user.id, 
-        points: 1 
-      })
+      if (resource) {
+        // Award points to resource owner for receiving votes
+        await gamificationEngine.updateUserProgress(resource.uploaded_by, {
+          type: vote_type === 'upvote' ? 'receive_upvote' : 'receive_downvote',
+          userId: resource.uploaded_by,
+          resourceId: resourceId,
+          resourceType: resource.resource_type,
+          metadata: {
+            voter_id: user.id,
+            vote_type: vote_type
+          }
+        })
+      }
 
       return NextResponse.json({ success: true, action: 'created' })
     }

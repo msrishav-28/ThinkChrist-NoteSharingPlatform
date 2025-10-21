@@ -21,7 +21,7 @@ export default function LeaderboardPage() {
   const fetchLeaderboard = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/leaderboard?timeframe=${timeframe}`)
+      const response = await fetch(`/api/gamification/leaderboard?timeframe=${timeframe}`)
       const data = await response.json()
       
       if (response.ok) {

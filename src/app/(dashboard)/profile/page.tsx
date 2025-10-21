@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/features/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/lib/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { getDepartments } from '@/lib/utils'
+import { getDepartments } from '@/features/auth/utils'
 import { User, Trophy, BookOpen, Download, ThumbsUp } from 'lucide-react'
 
 export default function ProfilePage() {

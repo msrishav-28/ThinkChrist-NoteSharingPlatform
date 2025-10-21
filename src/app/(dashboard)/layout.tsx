@@ -1,5 +1,7 @@
 import { Navbar } from '@/components/layout/navbar'
-import { AuthGuard } from '@/components/auth/auth-guard'
+import { AuthGuard } from '@/features/auth'
+import { NavigationBreadcrumb } from '@/components/common/navigation-breadcrumb'
+import { KeyboardShortcutsProvider } from '@/components/providers/keyboard-shortcuts-provider'
 
 export default function DashboardLayout({
   children,
@@ -8,12 +10,20 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="container mx-auto py-6">
-          {children}
-        </main>
-      </div>
+      <KeyboardShortcutsProvider>
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <div className="container mx-auto">
+            {/* Breadcrumb Navigation */}
+            <div className="py-4 border-b">
+              <NavigationBreadcrumb />
+            </div>
+            <main className="py-6">
+              {children}
+            </main>
+          </div>
+        </div>
+      </KeyboardShortcutsProvider>
     </AuthGuard>
   )
 }

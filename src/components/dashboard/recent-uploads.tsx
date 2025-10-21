@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { FileText, ArrowRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { useAuth } from '@/features/auth'
 import { Resource } from '@/types'
 import { formatDate } from '@/lib/utils'
 

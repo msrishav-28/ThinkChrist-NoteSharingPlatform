@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { gamificationEngine } from '@/lib/services/gamification'
+import { validateFileUpload, detectResourceTypeFromFile } from '@/features/resources/utils'
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +15,19 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Validate file upload using resource utilities
+    const validation = validateFileUpload(file.name, file.size, file.type)
+    if (!validation.isValid) {
+      return NextResponse.json({ 
+        error: 'File validation failed', 
+        details: validation.errors 
+      }, { status: 400 })
+    }
+
+    // Detect resource type
+    const resourceTypeDetection = detectResourceTypeFromFile(file.name, file.type)
+    const detectedResourceType = resourceTypeDetection.type
 
     // Upload file
     const fileExt = file.name.split('.').pop()
@@ -36,6 +51,7 @@ export async function POST(request: Request) {
       .from('resources')
       .insert({
         ...metadata,
+        resource_type: detectedResourceType,
         file_url: publicUrl,
         file_name: file.name,
         file_size: file.size,
@@ -52,20 +68,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save resource' }, { status: 500 })
     }
 
-    // Add contribution points
-    await supabase
-      .from('contributions')
-      .insert({
-        user_id: user.id,
-        type: 'upload',
-        resource_id: resource.id,
-        points_earned: 10,
-      })
-
-    // Update user points
-    await supabase.rpc('increment_user_points', { 
-      user_id: user.id, 
-      points: 10 
+    // Award points using enhanced gamification system
+    await gamificationEngine.updateUserProgress(user.id, {
+      type: 'upload_resource',
+      userId: user.id,
+      resourceId: resource.id,
+      resourceType: resource.resource_type || 'document',
+      metadata: {
+        file_size: file.size,
+        file_type: file.type,
+        department: metadata.department,
+        course: metadata.course,
+        is_verified: false
+      }
     })
 
     return NextResponse.json({ success: true, resource })

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { validateChristEmail } from '@/lib/utils'
+import { validateChristEmail } from '@/features/auth/utils'
 
 export async function POST(request: Request) {
   try {

@@ -1,4 +1,4 @@
-import { LoginForm } from '@/components/auth/login-form'
+import { LoginForm } from '@/features/auth'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -7,7 +7,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-4">
         <LoginForm />
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="text-primary hover:underline">
             Register here
           </Link>
