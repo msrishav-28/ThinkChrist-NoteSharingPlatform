@@ -220,3 +220,6 @@ pnpm-lock.yaml
 
 # Sentry Config File
 .sentryclirc
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
