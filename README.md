@@ -1,6 +1,7 @@
-# ThinkChrist Note Sharing Platform
+# ThinkUni Note Sharing Platform
 
-> Think notes, ThinkChrist — A community-driven platform for Christ University students to share and discover academic resources.
+> Think notes, ThinkUni — A community-driven platform for university students to share and discover academic resources.
+> Currently configured for: **ThinkChrist** (Christ University)
 
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
@@ -13,12 +14,14 @@
 
 ## ✨ Features
 
+- 🎨 **Premium UI/UX** — Modern Glassmorphism design with fluid animations
+- 🍱 **Bento Grid Layouts** — Responsive, data-dense dashboards and visualization
 - 📚 **Smart Resource Repository** — Upload and download notes, papers, and study materials
 - 🏆 **Gamification System** — Earn points and badges for contributions
 - 👥 **Community Driven** — Upvote/downvote system for quality control
 - 🔍 **Advanced Search** — Filter by department, semester, subject, and more
 - 📊 **Leaderboards** — Track top contributors
-- 🌓 **Dark Mode** — Toggle between light and dark themes
+- 🌓 **Dark Mode** — Premium "Deep Space" dark theme
 - 🔔 **Smart Notifications** — Stay updated with relevant activities
 - 👨‍💼 **Admin Panel** — Comprehensive administration tools
 
@@ -93,10 +96,12 @@ src/
 
 ## 🔒 Security Features
 
-- Server-side authentication enforcement
-- CORS restricted to production domain
-- ESLint validation during builds
-- Environment-aware logging (no sensitive data in production)
+- **Server-Side Auth** — Robust Supabase middleware protection
+- **Security Headers** — CSP, X-Frame-Options, HSTS implemented
+- **Data Protection** — Automatic PII masking in logs
+- **Rate Limiting** — Configurable API route protection
+- **XSS Prevention** — Advanced HTML sanitization
+- **Privacy-First Analytics** — Self-hosted, anonymous usage tracking
 
 ## 📖 Documentation
 
@@ -109,11 +114,12 @@ src/
 
 | Table | Purpose |
 |-------|---------|
-| `users` | User profiles with points and badge levels |
+| `users` | User profiles with role-based access control |
 | `resources` | Uploaded study materials |
 | `votes` | Upvote/downvote tracking |
 | `contributions` | Activity tracking for gamification |
-| `user_interactions` | Analytics and recommendations |
+| `analytics_events` | Privacy-first anonymous usage tracking |
+| `user_interactions` | Recommendation engine data |
 
 ## 🚀 Deployment
 

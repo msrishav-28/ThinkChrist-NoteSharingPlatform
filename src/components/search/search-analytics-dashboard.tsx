@@ -5,13 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import { BentoGrid, BentoGridItem } from '@/components/ui/bento-grid'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -19,15 +20,16 @@ import {
   Pie,
   Cell
 } from 'recharts'
-import { 
-  Search, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
+import {
+  Search,
+  TrendingUp,
+  TrendingDown,
+  Clock,
   MousePointer,
   Filter,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  Calendar
 } from 'lucide-react'
 import { searchService } from '@/lib/services/search'
 import type { SearchMetrics, QueryPerformance } from '@/lib/services/search-analytics'
@@ -59,10 +61,9 @@ export function SearchAnalyticsDashboard({
     setError(null)
 
     try {
-      // Calculate date range based on selection
       const endDate = new Date()
       const startDate = new Date()
-      
+
       switch (selectedTimeRange) {
         case '7d':
           startDate.setDate(endDate.getDate() - 7)
@@ -98,31 +99,22 @@ export function SearchAnalyticsDashboard({
   if (loading) {
     return (
       <div className={cn("space-y-6", className)}>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <BentoGrid>
           {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-                <div className="h-4 w-4 bg-muted animate-pulse rounded" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 w-16 bg-muted animate-pulse rounded mb-2" />
-                <div className="h-3 w-24 bg-muted animate-pulse rounded" />
-              </CardContent>
-            </Card>
+            <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />
           ))}
-        </div>
+        </BentoGrid>
       </div>
     )
   }
 
   if (error || !metrics) {
     return (
-      <Card className={cn("p-6", className)}>
+      <Card className={cn("p-6 border-destructive/50 bg-destructive/10", className)}>
         <div className="text-center">
-          <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground">{error || 'No analytics data available'}</p>
-          <Button onClick={loadAnalytics} className="mt-4">
+          <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
+          <p className="text-destructive font-medium">{error || 'No analytics data available'}</p>
+          <Button onClick={loadAnalytics} className="mt-4" variant="outline">
             Try Again
           </Button>
         </div>
@@ -130,195 +122,204 @@ export function SearchAnalyticsDashboard({
     )
   }
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+  const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#10b981']
+
+  const MetricItem = ({
+    title,
+    value,
+    subtitle,
+    icon: Icon,
+    trend
+  }: {
+    title: string
+    value: string
+    subtitle: string
+    icon: any
+    trend?: 'up' | 'down'
+  }) => (
+    <div className="flex flex-col justify-between h-full p-2">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-muted-foreground">{title}</span>
+        <div className="p-2 bg-primary/10 rounded-full">
+          <Icon className="h-4 w-4 text-primary" />
+        </div>
+      </div>
+      <div>
+        <div className="text-2xl font-bold font-heading">{value}</div>
+        <div className="flex items-center gap-1 mt-1">
+          {trend && (
+            trend === 'up'
+              ? <TrendingUp className="h-3 w-3 text-green-500" />
+              : <TrendingDown className="h-3 w-3 text-red-500" />
+          )}
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+    </div>
+  )
+
+  const searchTrend = metrics.searchTrends.length > 1
+    ? metrics.searchTrends[metrics.searchTrends.length - 1].searches >
+      metrics.searchTrends[metrics.searchTrends.length - 2].searches
+      ? 'up' : 'down'
+    : undefined
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-8", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Search Analytics</h2>
+          <h2 className="text-3xl font-bold font-heading">Search Analytics</h2>
           <p className="text-muted-foreground">
-            Insights into search behavior and performance
+            Monitor search performance and user behavior
           </p>
         </div>
-        
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border/50">
           <Button
-            variant={selectedTimeRange === '7d' ? 'default' : 'outline'}
+            variant={selectedTimeRange === '7d' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setSelectedTimeRange('7d')}
+            className="text-xs"
           >
-            7 days
+            7 Days
           </Button>
           <Button
-            variant={selectedTimeRange === '30d' ? 'default' : 'outline'}
+            variant={selectedTimeRange === '30d' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setSelectedTimeRange('30d')}
+            className="text-xs"
           >
-            30 days
+            30 Days
           </Button>
           <Button
-            variant={selectedTimeRange === '90d' ? 'default' : 'outline'}
+            variant={selectedTimeRange === '90d' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setSelectedTimeRange('90d')}
+            className="text-xs"
           >
-            90 days
+            90 Days
           </Button>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Searches</CardTitle>
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.totalSearches.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.searchTrends.length > 1 && (
-                <>
-                  {metrics.searchTrends[metrics.searchTrends.length - 1].searches > 
-                   metrics.searchTrends[metrics.searchTrends.length - 2].searches ? (
-                    <TrendingUp className="inline h-3 w-3 text-green-500 mr-1" />
-                  ) : (
-                    <TrendingDown className="inline h-3 w-3 text-red-500 mr-1" />
-                  )}
-                  vs previous period
-                </>
-              )}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Results</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics.averageResultsPerSearch.toFixed(1)}
+      <BentoGrid className="auto-rows-[minmax(180px,auto)]">
+        {/* Total Searches */}
+        <BentoGridItem
+          title="Total Searches"
+          description={
+            <div className="mt-2">
+              <div className="text-4xl font-bold font-heading text-indigo-500">{metrics.totalSearches.toLocaleString()}</div>
+              <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                {searchTrend === 'up' ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
+                vs previous period
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Results per search query
-            </p>
-          </CardContent>
-        </Card>
+          }
+          header={<div className="h-full w-full bg-indigo-500/10 rounded-xl" />}
+          className="md:col-span-1"
+          icon={<Search className="h-4 w-4 text-indigo-500" />}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Click-Through Rate</CardTitle>
-            <MousePointer className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(metrics.clickThroughRate * 100).toFixed(1)}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Users clicking on results
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Search Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics.averageSearchTime.toFixed(0)}ms
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Time to return results
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts and Details */}
-      <Tabs defaultValue="trends" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="trends">Search Trends</TabsTrigger>
-          <TabsTrigger value="queries">Top Queries</TabsTrigger>
-          <TabsTrigger value="filters">Popular Filters</TabsTrigger>
-          <TabsTrigger value="performance">Performance Issues</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Search Volume Over Time</CardTitle>
-              <CardDescription>
-                Daily search activity for the selected period
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+        {/* Chart: Search Trends */}
+        <BentoGridItem
+          title="Search Volume Trend"
+          description="Daily search activity"
+          header={
+            <div className="h-full w-full min-h-[200px] flex items-center justify-center p-4">
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={metrics.searchTrends}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                  <defs>
+                    <linearGradient id="colorSearches" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                    cursor={{ stroke: '#8884d8', strokeWidth: 1 }}
                   />
-                  <YAxis />
-                  <Tooltip 
-                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                    formatter={(value) => [value, 'Searches']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="searches" 
-                    stroke="#8884d8" 
-                    strokeWidth={2}
+                  <Line
+                    type="monotone"
+                    dataKey="searches"
+                    stroke="#8884d8"
+                    strokeWidth={3}
+                    dot={false}
+                    fillOpacity={1}
+                    fill="url(#colorSearches)"
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          }
+          className="md:col-span-2 row-span-2"
+          icon={<TrendingUp className="h-4 w-4 text-neutral-500" />}
+        />
 
-        <TabsContent value="queries" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Most Popular Search Queries</CardTitle>
-              <CardDescription>
-                Top search terms and their performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {metrics.topQueries.slice(0, 10).map((query, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{query.query}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {query.count} searches • {query.avgResults.toFixed(1)} avg results
-                      </div>
-                    </div>
-                    <Badge variant="secondary">
-                      #{index + 1}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* Avg Results */}
+        <BentoGridItem
+          title="Avg Results"
+          description="Per search query"
+          header={
+            <div className="flex items-center justify-center h-full">
+              <div className="text-4xl font-bold text-emerald-500">{metrics.averageResultsPerSearch.toFixed(1)}</div>
+            </div>
+          }
+          className="md:col-span-1"
+          icon={<BarChart3 className="h-4 w-4 text-neutral-500" />}
+        />
 
-        <TabsContent value="filters" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filter Usage</CardTitle>
-              <CardDescription>
-                Most commonly used search filters
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+        {/* Avg Time */}
+        <BentoGridItem
+          title="Avg Search Time"
+          description="Latency in ms"
+          header={
+            <div className="flex items-center justify-center h-full">
+              <div className="text-4xl font-bold text-amber-500">{metrics.averageSearchTime.toFixed(0)}<span className="text-lg text-muted-foreground ml-1">ms</span></div>
+            </div>
+          }
+          className="md:col-span-1"
+          icon={<Clock className="h-4 w-4 text-neutral-500" />}
+        />
+
+        {/* CTR */}
+        <BentoGridItem
+          title="Click-Through Rate"
+          description="Engagement"
+          header={
+            <div className="flex items-center justify-center h-full">
+              <div className="text-4xl font-bold text-pink-500">{(metrics.clickThroughRate * 100).toFixed(1)}%</div>
+            </div>
+          }
+          className="md:col-span-1"
+          icon={<MousePointer className="h-4 w-4 text-neutral-500" />}
+        />
+
+        {/* Top Queries Table */}
+        <BentoGridItem
+          title="Top Search Queries"
+          description="Most frequent terms"
+          header={
+            <div className="mt-4 space-y-3">
+              {metrics.topQueries.slice(0, 5).map((query, index) => (
+                <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-black/5 dark:bg-white/5">
+                  <span className="font-medium text-sm truncate max-w-[120px]">{query.query}</span>
+                  <Badge variant="secondary" className="text-xs">{query.count}</Badge>
+                </div>
+              ))}
+            </div>
+          }
+          className="md:col-span-1 row-span-2"
+          icon={<Search className="h-4 w-4 text-neutral-500" />}
+        />
+
+        {/* Filter Usage */}
+        <BentoGridItem
+          title="Filter Usage"
+          description="Distribution of applied filters"
+          header={
+            <div className="h-full w-full min-h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={Object.entries(metrics.popularFilters).map(([key, value]) => ({
@@ -327,10 +328,9 @@ export function SearchAnalyticsDashboard({
                     }))}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    innerRadius={60}
                     outerRadius={80}
-                    fill="#8884d8"
+                    paddingAngle={5}
                     dataKey="value"
                   >
                     {Object.entries(metrics.popularFilters).map((_, index) => (
@@ -340,55 +340,43 @@ export function SearchAnalyticsDashboard({
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <div className="flex flex-wrap justify-center gap-2 mt-2">
+                {Object.entries(metrics.popularFilters).slice(0, 3).map(([key], index) => (
+                  <div key={key} className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                    {key}
+                  </div>
+                ))}
+              </div>
+            </div>
+          }
+          className="md:col-span-2"
+          icon={<Filter className="h-4 w-4 text-neutral-500" />}
+        />
 
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Poor Performing Queries</CardTitle>
-              <CardDescription>
-                Queries with low click-through rates or poor results
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {poorPerformers.length === 0 ? (
-                <div className="text-center py-8">
-                  <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-muted-foreground">
-                    No performance issues detected! All queries are performing well.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {poorPerformers.map((query, index) => (
-                    <div key={index} className="p-4 border rounded-lg bg-red-50 dark:bg-red-950/20">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium text-red-900 dark:text-red-100">
-                            "{query.query}"
-                          </div>
-                          <div className="text-sm text-red-700 dark:text-red-300 mt-1">
-                            {query.totalSearches} searches • {query.averageResults.toFixed(1)} avg results
-                          </div>
-                          <div className="flex gap-4 mt-2 text-xs text-red-600 dark:text-red-400">
-                            <span>CTR: {(query.clickThroughRate * 100).toFixed(1)}%</span>
-                            <span>Avg Time: {query.averageSearchTime.toFixed(0)}ms</span>
-                          </div>
-                        </div>
-                        <Badge variant="destructive">
-                          Needs Attention
-                        </Badge>
-                      </div>
+        {/* Performance Issues */}
+        {poorPerformers.length > 0 && (
+          <BentoGridItem
+            title="Needs Attention"
+            description="Low performing queries"
+            header={
+              <div className="h-full overflow-auto max-h-[200px] space-y-2 pr-2">
+                {poorPerformers.slice(0, 4).map((query, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-900/30">
+                    <div className="max-w-[70%]">
+                      <div className="font-medium text-sm truncate text-red-700 dark:text-red-300">"{query.query}"</div>
+                      <div className="text-xs text-red-600/80 dark:text-red-400/80">CTR: {(query.clickThroughRate * 100).toFixed(0)}%</div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  </div>
+                ))}
+              </div>
+            }
+            className="md:col-span-1"
+            icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
+          />
+        )}
+      </BentoGrid>
     </div>
   )
 }

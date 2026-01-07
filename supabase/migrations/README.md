@@ -1,6 +1,6 @@
 # Database Migrations
 
-This directory contains SQL migration files for the ThinkChrist platform database schema.
+This directory contains SQL migration files for the ThinkUni platform database schema.
 
 ## Migration History
 

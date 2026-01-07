@@ -130,13 +130,13 @@ CREATE POLICY "Collection owners can manage collaborators"
 
 -- Function to automatically add collection owner as admin collaborator
 CREATE OR REPLACE FUNCTION add_collection_owner_as_collaborator()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO collection_collaborators (collection_id, user_id, permission_level, added_by)
     VALUES (NEW.id, NEW.created_by, 'admin', NEW.created_by);
     RETURN NEW;
 END;
-$ language 'plpgsql';
+$$ language 'plpgsql';
 
 -- Trigger to add collection owner as collaborator
 CREATE TRIGGER add_collection_owner_collaborator_trigger
@@ -145,7 +145,7 @@ CREATE TRIGGER add_collection_owner_collaborator_trigger
 
 -- Function to log collaboration activities automatically
 CREATE OR REPLACE FUNCTION log_collection_resource_activity()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         INSERT INTO collaboration_activities (
@@ -212,7 +212,7 @@ BEGIN
     
     RETURN COALESCE(NEW, OLD);
 END;
-$ language 'plpgsql';
+$$ language 'plpgsql';
 
 -- Trigger to log collection resource activities
 CREATE TRIGGER log_collection_resource_activity_trigger
@@ -221,7 +221,7 @@ CREATE TRIGGER log_collection_resource_activity_trigger
 
 -- Function to log collection updates
 CREATE OR REPLACE FUNCTION log_collection_update_activity()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     -- Only log if significant fields changed
     IF OLD.title != NEW.title OR 
@@ -257,7 +257,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$ language 'plpgsql';
+$$ language 'plpgsql';
 
 -- Trigger to log collection updates
 CREATE TRIGGER log_collection_update_activity_trigger
@@ -266,7 +266,7 @@ CREATE TRIGGER log_collection_update_activity_trigger
 
 -- Function to update collaborator last_active timestamp
 CREATE OR REPLACE FUNCTION update_collaborator_activity()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     UPDATE collection_collaborators 
     SET last_active = NOW()
@@ -275,7 +275,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$ language 'plpgsql';
+$$ language 'plpgsql';
 
 -- Trigger to update collaborator activity
 CREATE TRIGGER update_collaborator_activity_trigger
@@ -284,7 +284,7 @@ CREATE TRIGGER update_collaborator_activity_trigger
 
 -- Function to cleanup expired invitations (can be called periodically)
 CREATE OR REPLACE FUNCTION cleanup_expired_invitations()
-RETURNS INTEGER AS $
+RETURNS INTEGER AS $$
 BEGIN
     UPDATE collaboration_invitations 
     SET status = 'expired'
@@ -293,7 +293,7 @@ BEGIN
     
     RETURN (SELECT COUNT(*) FROM collaboration_invitations WHERE status = 'expired');
 END;
-$ language 'plpgsql';
+$$ language 'plpgsql';
 
 -- Add notes column to collection_resources if not exists (for collaborative notes)
 ALTER TABLE collection_resources 
@@ -303,7 +303,7 @@ ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- Create trigger to update notes timestamp
 CREATE OR REPLACE FUNCTION update_collection_resource_notes()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     IF OLD.notes IS DISTINCT FROM NEW.notes THEN
         NEW.updated_by = auth.uid();
@@ -332,7 +332,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$ language 'plpgsql';
+$$ language 'plpgsql';
 
 CREATE TRIGGER update_collection_resource_notes_trigger
   BEFORE UPDATE ON collection_resources

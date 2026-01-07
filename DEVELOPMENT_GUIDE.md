@@ -1,6 +1,6 @@
 # Development Guide
 
-> Guidelines for developing features using the modular architecture of ThinkChrist Note Sharing Platform.
+> Guidelines for developing features using the modular architecture of ThinkUni Note Sharing Platform.
 
 ## Table of Contents
 
@@ -303,6 +303,65 @@ function App() {
     </Suspense>
   )
 }
+```
+
+---
+
+## Security & Utilities
+
+### Privacy-First Analytics
+
+Use the self-hosted analytics service for tracking events without PII:
+
+```typescript
+import { analytics } from '@/lib/services/privacy-analytics'
+
+// Track page view
+analytics.trackPageView('/dashboard')
+
+// Track custom event
+analytics.trackEvent({
+  event_type: 'resource_download',
+  resource_id: '123',
+  metadata: { file_type: 'pdf' }
+})
+```
+
+### Safe Logging & Data Masking
+
+Always use the centralized logger which automatically masks sensitive data (emails, tokens):
+
+```typescript
+import { logger } from '@/lib/logger'
+
+// ✅ Safe: PII automatically masked
+logger.info('User action', { user: userData, action: 'login' })
+
+// Data Masking Utility (internal use)
+import { maskEmail, safeStringify } from '@/lib/security/data-masking'
+```
+
+### Rate Limiting
+
+Protect API routes using the rate limiter middleware:
+
+```typescript
+import { withRateLimit, rateLimitConfigs } from '@/lib/security'
+
+export const POST = withRateLimit(async (req) => {
+  // Your handler code
+}, rateLimitConfigs.auth) // Options: api, auth, upload, search
+```
+
+### XSS Prevention
+
+Use `highlightSearchTerms` for safe HTML rendering:
+
+```typescript
+import { highlightSearchTerms } from '@/lib/security/sanitize'
+
+const safeHtml = highlightSearchTerms(userInput, searchQuery)
+return <span dangerouslySetInnerHTML={{ __html: safeHtml }} />
 ```
 
 ---

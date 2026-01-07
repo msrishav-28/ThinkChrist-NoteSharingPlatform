@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/lib/hooks/use-toast'
 import { validateInstitutionEmail, getDepartments } from '../utils'
 
@@ -23,6 +24,7 @@ const registerSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
   department: z.string().min(1, 'Please select a department'),
   semester: z.string().min(1, 'Please select a semester'),
+  tracking_consent: z.boolean().default(false),
 })
 
 type RegisterFormData = z.infer<typeof registerSchema>
@@ -41,6 +43,7 @@ export function RegisterForm() {
       full_name: '',
       department: '',
       semester: '',
+      tracking_consent: false,
     },
   })
 
@@ -73,6 +76,7 @@ export function RegisterForm() {
             full_name: data.full_name,
             department: data.department,
             semester: parseInt(data.semester),
+            tracking_consent: data.tracking_consent,
           })
 
         if (profileError) {
@@ -185,6 +189,20 @@ export function RegisterForm() {
             {form.formState.errors.password && (
               <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
             )}
+          </div>
+          <div className="flex items-start space-x-3 py-2">
+            <Checkbox
+              id="tracking_consent"
+              checked={form.watch('tracking_consent')}
+              onCheckedChange={(checked) => form.setValue('tracking_consent', checked === true)}
+              disabled={loading}
+            />
+            <label
+              htmlFor="tracking_consent"
+              className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
+            >
+              Help us improve by sharing basic usage data like device type and general location
+            </label>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Creating account...' : 'Create account'}

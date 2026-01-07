@@ -102,8 +102,8 @@ export const thinkchristConfig = {
     // Theme configuration
     theme: {
         colors: {
-            primary: '#2563eb', // Blue
-            secondary: '#f59e0b' // Amber/Gold
+            primary: '#2b65ec', // Electric Royal Blue
+            secondary: '#fbbf24' // Luminous Amber
         }
     }
 }

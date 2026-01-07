@@ -623,7 +623,7 @@ export class GitHubPreviewGenerator {
         fetch(`${this.API_BASE_URL}/rate_limit`, {
           headers: {
             'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'ThinkChrist-Platform/1.0',
+            'User-Agent': `${config.branding.appName}-Platform/1.0`,
             'Authorization': `Bearer ${testToken}`
           }
         })

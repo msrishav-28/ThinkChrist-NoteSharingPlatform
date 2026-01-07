@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
+// import '@/clients/thinkchrist/theme.css' // Client-specific branding - disabled to use globals.css defaults
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { AuthProvider } from '@/context/auth-context'
 import { Toaster } from '@/components/ui/toaster'

@@ -278,7 +278,7 @@ export class EmailDigestService {
       // Example with a hypothetical email service:
       // await emailService.send({
       //   to: digestData.user.email,
-      //   subject: 'ThinkChrist Weekly Digest',
+      //   subject: `${config.branding.appName} Weekly Digest`,
       //   html: this.generateEmailHTML(digestData)
       // })
 

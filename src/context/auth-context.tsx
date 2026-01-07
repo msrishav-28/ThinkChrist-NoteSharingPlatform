@@ -4,6 +4,7 @@ import { createContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { User as DBUser } from '@/types'
+import { track } from '@/lib/services/tracking-service'
 
 interface AuthContextType {
   user: User | null
@@ -24,17 +25,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
-      
+
       if (user) {
         const { data: profile } = await supabase
           .from('users')
           .select('*')
           .eq('id', user.id)
           .single()
-        
+
         setProfile(profile)
       }
-      
+
       setLoading(false)
     }
 
@@ -43,17 +44,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null)
-        
+
         if (session?.user) {
           const { data: profile } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single()
-          
+
           setProfile(profile)
+
+          // Track login event
+          if (event === 'SIGNED_IN') {
+            track.login()
+          }
         } else {
           setProfile(null)
+
+          // Track logout event
+          if (event === 'SIGNED_OUT') {
+            track.logout()
+          }
         }
       }
     )

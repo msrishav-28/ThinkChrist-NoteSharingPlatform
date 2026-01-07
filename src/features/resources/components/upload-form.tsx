@@ -465,7 +465,7 @@ export function UploadForm() {
 
   return (
     <UploadErrorBoundary>
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-2xl mx-auto border-0 shadow-2xl glass bg-white/50 dark:bg-black/50 backdrop-blur-xl">
         <CardHeader>
           <CardTitle>Upload Resource</CardTitle>
           <CardDescription>

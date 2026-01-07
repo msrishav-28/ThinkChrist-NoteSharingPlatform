@@ -31,32 +31,39 @@ export const BentoGridItem = ({
     description,
     header,
     icon,
+    children,
 }: {
     className?: string;
     title?: string | React.ReactNode;
     description?: string | React.ReactNode;
     header?: React.ReactNode;
     icon?: React.ReactNode;
+    children?: React.ReactNode;
 }) => {
     return (
         <motion.div
             whileHover={{ scale: 1.02, y: -5 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             className={cn(
-                "row-span-1 rounded-2xl group/bento hover:shadow-2xl transition-all shadow-input dark:shadow-none p-6 dark:bg-black dark:border-white/[0.2] bg-white border border-transparent justify-between flex flex-col space-y-4",
+                "row-span-1 rounded-2xl group/bento hover:shadow-2xl transition-all shadow-input dark:shadow-none p-6 dark:bg-black dark:border-white/[0.2] bg-white border border-transparent flex flex-col space-y-4",
                 className
             )}
         >
             {header}
             <div className="group-hover/bento:translate-x-2 transition duration-200">
                 {icon}
-                <div className="font-heading font-bold text-neutral-600 dark:text-neutral-200 mb-2 mt-2 text-lg">
-                    {title}
-                </div>
-                <div className="font-sans font-normal text-neutral-600 text-sm dark:text-neutral-300 leading-relaxed">
-                    {description}
-                </div>
+                {title && (
+                    <div className="font-heading font-bold text-neutral-600 dark:text-neutral-200 mb-2 mt-2 text-lg">
+                        {title}
+                    </div>
+                )}
+                {description && (
+                    <div className="font-sans font-normal text-neutral-600 text-sm dark:text-neutral-300 leading-relaxed">
+                        {description}
+                    </div>
+                )}
             </div>
+            {children}
         </motion.div>
     );
 };

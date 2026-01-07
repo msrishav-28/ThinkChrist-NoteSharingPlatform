@@ -5,18 +5,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
+import { BentoGrid, BentoGridItem } from '@/components/ui/bento-grid'
 import {
   AlertTriangle,
   CheckCircle,
   XCircle,
   Clock,
-  Activity,
   RefreshCw,
-  Zap
+  Zap,
+  Activity,
+  Server
 } from 'lucide-react'
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts'
 import { logger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
 
 interface APIHealthStatus {
   service: 'youtube' | 'github'
@@ -101,7 +112,7 @@ export function APIMonitoringDashboard() {
       })
 
       if (response.ok) {
-        fetchData() // Refresh data
+        fetchData()
       }
     } catch (err) {
       logger.error('Failed to resolve alert', { error: err })
@@ -113,7 +124,7 @@ export function APIMonitoringDashboard() {
       const response = await fetch('/api/admin/monitoring?action=test')
       const result = await response.json()
       logger.debug('Connection test results', { result })
-      fetchData() // Refresh data after test
+      fetchData()
     } catch (err) {
       logger.error('Failed to test connections', { error: err })
     }
@@ -121,7 +132,7 @@ export function APIMonitoringDashboard() {
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 30000) // Refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000)
     return () => clearInterval(interval)
   }, [])
 
@@ -143,15 +154,13 @@ export function APIMonitoringDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'healthy':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900'
       case 'degraded':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900'
       case 'unhealthy':
-        return 'bg-red-100 text-red-800'
-      case 'unavailable':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800'
     }
   }
 
@@ -172,20 +181,23 @@ export function APIMonitoringDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-6 w-6 animate-spin" />
-        <span className="ml-2">Loading monitoring data...</span>
+      <div className="space-y-6">
+        <BentoGrid>
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />
+          ))}
+        </BentoGrid>
       </div>
     )
   }
 
   if (error) {
     return (
-      <Alert>
+      <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          Failed to load monitoring data: {error}
-          <Button onClick={fetchData} variant="outline" size="sm" className="ml-2">
+        <AlertDescription className="flex items-center justify-between">
+          <span>Failed to load monitoring data: {error}</span>
+          <Button onClick={fetchData} variant="outline" size="sm">
             Retry
           </Button>
         </AlertDescription>
@@ -193,14 +205,15 @@ export function APIMonitoringDashboard() {
     )
   }
 
-  if (!data) {
-    return <div>No monitoring data available</div>
-  }
+  if (!data) return <div>No monitoring data available</div>
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">API Monitoring Dashboard</h2>
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold font-heading">System Status</h2>
+          <p className="text-muted-foreground">Real-time API monitoring and health checks</p>
+        </div>
         <div className="flex gap-2">
           <Button onClick={testConnections} variant="outline" size="sm">
             <Zap className="h-4 w-4 mr-2" />
@@ -213,203 +226,162 @@ export function APIMonitoringDashboard() {
         </div>
       </div>
 
-      {/* Health Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(data.healthStatus).map(([service, health]) => (
-          <Card key={service}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium capitalize">
-                {service} API
-              </CardTitle>
-              {getStatusIcon(health.status)}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Badge className={getStatusColor(health.status)}>
-                  {health.status}
-                </Badge>
-
-                {health.responseTime && (
-                  <div className="text-sm text-gray-600">
-                    Response Time: {health.responseTime.toFixed(0)}ms
-                  </div>
-                )}
-
-                <div className="text-sm text-gray-600">
-                  Error Rate: {(health.errorRate * 100).toFixed(1)}%
-                </div>
-
-                {health.quotaUsage !== undefined && (
-                  <div className="space-y-1">
-                    <div className="text-sm text-gray-600">
-                      Quota Usage: {(health.quotaUsage * 100).toFixed(1)}%
+      <BentoGrid className="auto-rows-[minmax(180px,auto)]">
+        {/* Active Alerts - Prominent if any */}
+        {data.activeAlerts.length > 0 && (
+          <BentoGridItem
+            title="Active Alerts"
+            description={`${data.activeAlerts.length} system alerts require attention`}
+            header={
+              <div className="mt-4 space-y-3 max-h-[200px] overflow-auto pr-2">
+                {data.activeAlerts.map((alert) => (
+                  <div key={alert.id} className="flex items-center justify-between p-3 border rounded-lg bg-red-50 dark:bg-red-900/10 dark:border-red-900/30">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="destructive" className="uppercase text-[10px]">
+                          {alert.severity}
+                        </Badge>
+                        <span className="font-semibold text-sm capitalize">{alert.service}</span>
+                      </div>
+                      <p className="text-sm font-medium">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(alert.timestamp).toLocaleTimeString()}
+                      </p>
                     </div>
-                    <Progress value={health.quotaUsage * 100} className="h-2" />
+                    <Button
+                      onClick={() => resolveAlert(alert.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Resolve
+                    </Button>
                   </div>
-                )}
-
-                <div className="text-xs text-gray-500">
-                  Last checked: {new Date(health.lastChecked).toLocaleTimeString()}
-                </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            }
+            className="md:col-span-3 border-red-200 dark:border-red-900"
+            icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
+          />
+        )}
 
-      {/* Active Alerts */}
-      {data.activeAlerts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" />
-              Active Alerts ({data.activeAlerts.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {data.activeAlerts.map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge className={getSeverityColor(alert.severity)}>
-                        {alert.severity}
-                      </Badge>
-                      <Badge variant="outline" className="capitalize">
-                        {alert.service}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        {alert.type.replace('_', ' ')}
-                      </span>
-                    </div>
-                    <p className="text-sm">{alert.message}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(alert.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => resolveAlert(alert.id)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Resolve
-                  </Button>
-                </div>
-              ))}
+        {/* YouTube Status */}
+        <BentoGridItem
+          title="YouTube API"
+          description={
+            <div className="flex gap-2 mt-1">
+              <Badge variant="outline" className={cn("capitalize", getStatusColor(data.healthStatus.youtube?.status || 'unknown'))}>
+                {data.healthStatus.youtube?.status}
+              </Badge>
+              {data.healthStatus.youtube?.quotaUsage !== undefined && (
+                <span className="text-xs text-muted-foreground flex items-center">
+                  Quota: {(data.healthStatus.youtube.quotaUsage * 100).toFixed(1)}%
+                </span>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Metrics Tabs */}
-      <Tabs defaultValue="youtube" className="w-full">
-        <TabsList>
-          <TabsTrigger value="youtube">YouTube Metrics</TabsTrigger>
-          <TabsTrigger value="github">GitHub Metrics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="youtube">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Activity className="h-5 w-5 mr-2" />
-                YouTube API Usage (Last 7 Days)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          }
+          header={
+            <div className="space-y-4 mt-2">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-muted/50 p-2 rounded">
+                  <div className="text-muted-foreground text-xs">Latency</div>
+                  <div className="font-mono font-bold">{data.healthStatus.youtube?.responseTime?.toFixed(0)}ms</div>
+                </div>
+                <div className="bg-muted/50 p-2 rounded">
+                  <div className="text-muted-foreground text-xs">Errors</div>
+                  <div className="font-mono font-bold">{(data.healthStatus.youtube?.errorRate * 100).toFixed(1)}%</div>
+                </div>
+              </div>
               {data.quotaInfo.youtube && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Daily Limit:</span>
-                      <div className="font-medium">{data.quotaInfo.youtube.dailyLimit}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Used:</span>
-                      <div className="font-medium">{data.quotaInfo.youtube.currentUsage}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Resets:</span>
-                      <div className="font-medium">
-                        {new Date(data.quotaInfo.youtube.resetTime).toLocaleTimeString()}
-                      </div>
-                    </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Daily Quota</span>
+                    <span>{data.quotaInfo.youtube.currentUsage.toLocaleString()} / {data.quotaInfo.youtube.dailyLimit.toLocaleString()}</span>
                   </div>
+                  <Progress value={(data.quotaInfo.youtube.currentUsage / data.quotaInfo.youtube.dailyLimit) * 100} className="h-2" />
                 </div>
               )}
+            </div>
+          }
+          className="md:col-span-1"
+          icon={<Server className="h-4 w-4 text-red-500" />}
+        />
 
-              <div className="space-y-2">
-                {data.metrics.youtube.slice(-7).map((metric, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <span className="text-sm">
-                      {new Date(metric.timestamp).toLocaleDateString()}
-                    </span>
-                    <div className="flex gap-4 text-sm">
-                      <span>Requests: {metric.requestCount}</span>
-                      <span className="text-green-600">Success: {metric.successCount}</span>
-                      <span className="text-red-600">Errors: {metric.errorCount}</span>
-                      <span>Avg Time: {metric.averageResponseTime.toFixed(0)}ms</span>
-                    </div>
-                  </div>
-                ))}
+        {/* GitHub Status */}
+        <BentoGridItem
+          title="GitHub API"
+          description={
+            <div className="flex gap-2 mt-1">
+              <Badge variant="outline" className={cn("capitalize", getStatusColor(data.healthStatus.github?.status || 'unknown'))}>
+                {data.healthStatus.github?.status}
+              </Badge>
+              <span className="text-xs text-muted-foreground flex items-center">
+                Remaining: {data.quotaInfo.github?.remaining}
+              </span>
+            </div>
+          }
+          header={
+            <div className="space-y-4 mt-2">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-muted/50 p-2 rounded">
+                  <div className="text-muted-foreground text-xs">Latency</div>
+                  <div className="font-mono font-bold">{data.healthStatus.github?.responseTime?.toFixed(0)}ms</div>
+                </div>
+                <div className="bg-muted/50 p-2 rounded">
+                  <div className="text-muted-foreground text-xs">Errors</div>
+                  <div className="font-mono font-bold">{(data.healthStatus.github?.errorRate * 100).toFixed(1)}%</div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="github">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Activity className="h-5 w-5 mr-2" />
-                GitHub API Usage (Last 7 Days)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
               {data.quotaInfo.github && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Limit:</span>
-                      <div className="font-medium">{data.quotaInfo.github.limit}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Remaining:</span>
-                      <div className="font-medium">{data.quotaInfo.github.remaining}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Used:</span>
-                      <div className="font-medium">{data.quotaInfo.github.used}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Resets:</span>
-                      <div className="font-medium">
-                        {new Date(data.quotaInfo.github.reset * 1000).toLocaleTimeString()}
-                      </div>
-                    </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Hourly Limit</span>
+                    <span>{data.quotaInfo.github.used} / {data.quotaInfo.github.limit}</span>
                   </div>
+                  <Progress value={(data.quotaInfo.github.used / data.quotaInfo.github.limit) * 100} className="h-2" />
                 </div>
               )}
+            </div>
+          }
+          className="md:col-span-1"
+          icon={<Server className="h-4 w-4 text-neutral-800 dark:text-white" />}
+        />
 
-              <div className="space-y-2">
-                {data.metrics.github.slice(-7).map((metric, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <span className="text-sm">
-                      {new Date(metric.timestamp).toLocaleDateString()}
-                    </span>
-                    <div className="flex gap-4 text-sm">
-                      <span>Requests: {metric.requestCount}</span>
-                      <span className="text-green-600">Success: {metric.successCount}</span>
-                      <span className="text-red-600">Errors: {metric.errorCount}</span>
-                      <span>Avg Time: {metric.averageResponseTime.toFixed(0)}ms</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        {/* System Health Overview (Charts) */}
+        <BentoGridItem
+          title="API Traffic Overview"
+          description="Request volume per service"
+          header={
+            <div className="h-[200px] w-full mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.metrics.youtube.map((m, i) => ({
+                  time: new Date(m.timestamp).toLocaleDateString(),
+                  youtube: m.requestCount,
+                  github: data.metrics.github[i]?.requestCount || 0
+                }))}>
+                  <defs>
+                    <linearGradient id="colorYoutube" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorGithub" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                  />
+                  <Area type="monotone" dataKey="youtube" stroke="#ef4444" fillOpacity={1} fill="url(#colorYoutube)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="github" stroke="#6366f1" fillOpacity={1} fill="url(#colorGithub)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          }
+          className="md:col-span-2"
+          icon={<Activity className="h-4 w-4 text-neutral-500" />}
+        />
+      </BentoGrid>
     </div>
   )
 }
