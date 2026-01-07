@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { 
-  Search, 
-  Filter, 
-  SortAsc, 
-  SortDesc, 
-  Grid, 
+import {
+  Search,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Grid,
   List,
   Clock,
   TrendingUp,
@@ -60,7 +60,7 @@ export function SearchResults({
   const [sortBy, setSortBy] = useState('relevance')
   const [sortedResults, setSortedResults] = useState<Resource[]>([])
   const [showRankingInfo, setShowRankingInfo] = useState(false)
-  
+
   // Generate unique IDs for accessibility
   const resultsId = 'search-results'
   const statusId = 'search-status'
@@ -77,7 +77,7 @@ export function SearchResults({
   // Sort results based on selected option
   useEffect(() => {
     let sorted = [...results.resources]
-    
+
     switch (sortBy) {
       case 'recent':
         sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -96,29 +96,23 @@ export function SearchResults({
         // Keep original order for relevance (already sorted by search service with ranking)
         break
     }
-    
+
     setSortedResults(sorted)
   }, [results.resources, sortBy])
 
   // Check if results have ranking information
-  const hasRankingInfo = results.resources.some(resource => 
+  const hasRankingInfo = results.resources.some(resource =>
     'rankingScore' in resource && 'rankingFactors' in resource
   )
 
-  // Highlight search terms in text
+  // Highlight search terms in text - using secure sanitization
   const highlightText = (text: string, searchQuery: string): React.ReactNode => {
     if (!searchQuery.trim() || !text) return text
 
-    const terms = searchQuery.trim().split(/\s+/).filter(term => term.length > 1)
-    if (terms.length === 0) return text
+    const { highlightSearchTerms } = require('@/lib/security/sanitize')
+    const highlightedHtml = highlightSearchTerms(text, searchQuery)
 
-    let highlightedText = text
-    terms.forEach(term => {
-      const regex = new RegExp(`(${term})`, 'gi')
-      highlightedText = highlightedText.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">$1</mark>')
-    })
-
-    return <span dangerouslySetInnerHTML={{ __html: highlightedText }} />
+    return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
   }
 
   // Handle result click with analytics
@@ -133,7 +127,7 @@ export function SearchResults({
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-10 w-32" />
         </div>
-        <div 
+        <div
           className={cn(
             "grid gap-4",
             viewMode === 'grid' ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
@@ -157,9 +151,9 @@ export function SearchResults({
 
   if (!results.resources.length && !loading) {
     return (
-      <div 
-        className={cn("text-center py-12", className)} 
-        role="region" 
+      <div
+        className={cn("text-center py-12", className)}
+        role="region"
         aria-label="No search results"
       >
         <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
@@ -184,7 +178,7 @@ export function SearchResults({
       {/* Results Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          <div 
+          <div
             id={statusId}
             className="text-sm text-muted-foreground"
             aria-live="polite"
@@ -200,7 +194,7 @@ export function SearchResults({
         <div className="flex items-center gap-2" role="toolbar" aria-label="Search result controls">
           {/* Sort Options */}
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger 
+            <SelectTrigger
               className="w-40"
               aria-label="Sort search results"
               id={sortId}
@@ -262,12 +256,12 @@ export function SearchResults({
       </div>
 
       {/* Results Grid/List */}
-      <div 
+      <div
         id={resultsId}
         className={cn(
           "grid gap-4",
-          viewMode === 'grid' 
-            ? "md:grid-cols-2 lg:grid-cols-3" 
+          viewMode === 'grid'
+            ? "md:grid-cols-2 lg:grid-cols-3"
             : "grid-cols-1"
         )}
         role="list"
@@ -278,8 +272,8 @@ export function SearchResults({
           const hasRanking = 'rankingScore' in rankedResource && 'rankingFactors' in rankedResource
 
           return (
-            <div 
-              key={resource.id} 
+            <div
+              key={resource.id}
               onClick={() => handleResultClick(resource, index)}
               role="listitem"
               aria-posinset={index + 1}
@@ -290,12 +284,12 @@ export function SearchResults({
                   resource={{
                     ...resource,
                     // Apply highlighting to title and description
-                    title: typeof highlightText(resource.title, query) === 'string' 
-                      ? resource.title 
+                    title: typeof highlightText(resource.title, query) === 'string'
+                      ? resource.title
                       : resource.title,
                     description: resource.description || ''
                   }}
-                  onVote={() => {}}
+                  onVote={() => { }}
                   showHighlighting={true}
                   highlightQuery={query}
                   className={cn(
@@ -303,10 +297,10 @@ export function SearchResults({
                     viewMode === 'list' && "flex-row"
                   )}
                 />
-                
+
                 {/* Ranking Information Overlay */}
                 {hasRanking && showRankingInfo && (
-                  <div 
+                  <div
                     className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm border rounded-lg p-2 text-xs space-y-1 min-w-[120px]"
                     role="tooltip"
                     aria-label="Ranking information"
@@ -325,7 +319,7 @@ export function SearchResults({
                 )}
 
                 {/* Position Badge */}
-                <div 
+                <div
                   className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full"
                   aria-label={`Result position ${index + 1}`}
                 >
@@ -340,8 +334,8 @@ export function SearchResults({
       {/* Load More Button */}
       {onLoadMore && results.resources.length < results.total && (
         <div className="text-center pt-6">
-          <Button 
-            onClick={onLoadMore} 
+          <Button
+            onClick={onLoadMore}
             variant="outline"
             aria-label={`Load more results. Currently showing ${results.resources.length} of ${results.total} results`}
           >
@@ -352,7 +346,7 @@ export function SearchResults({
 
       {/* Results Summary */}
       {results.resources.length > 0 && (
-        <div 
+        <div
           className="text-center text-sm text-muted-foreground pt-4 border-t"
           aria-live="polite"
           aria-atomic="true"
@@ -390,16 +384,10 @@ export function HighlightedResourceCard({
   const highlightText = (text: string): React.ReactNode => {
     if (!query.trim() || !text) return text
 
-    const terms = query.trim().split(/\s+/).filter(term => term.length > 1)
-    if (terms.length === 0) return text
+    const { highlightSearchTerms } = require('@/lib/security/sanitize')
+    const highlightedHtml = highlightSearchTerms(text, query)
 
-    let highlightedText = text
-    terms.forEach(term => {
-      const regex = new RegExp(`(${term})`, 'gi')
-      highlightedText = highlightedText.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">$1</mark>')
-    })
-
-    return <span dangerouslySetInnerHTML={{ __html: highlightedText }} />
+    return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
   }
 
   return (

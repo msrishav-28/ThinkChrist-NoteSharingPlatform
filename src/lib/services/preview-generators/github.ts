@@ -1,4 +1,5 @@
 import type { LinkPreview } from '@/types'
+import { config } from '@/shared/config'
 import { CircuitBreakerManager } from '../circuit-breaker'
 import { monitoredAPICall } from '../api-monitoring-middleware'
 
@@ -70,10 +71,10 @@ export class GitHubPreviewGenerator {
   private static readonly API_BASE_URL = 'https://api.github.com'
   private static readonly MAX_RETRIES = 3
   private static readonly RETRY_DELAY_MS = 1000
-  
+
   // Rate limit tracking (in production, this should be stored in Redis/database)
   private static rateLimitInfo = new Map<string, GitHubRateLimit>()
-  
+
   /**
    * Generate preview for GitHub repository
    */
@@ -86,18 +87,18 @@ export class GitHubPreviewGenerator {
     try {
       // Determine which token to use (user token takes precedence)
       const authConfig = this.getAuthConfig(userToken)
-      
+
       // Check rate limits before making requests
       if (!this.canMakeAPICall(authConfig)) {
         console.warn('GitHub API rate limit exceeded, using fallback preview')
         return this.createBasicPreview(repoInfo, url)
       }
-      
+
       // Try to get repo info from GitHub API
       const repoData = await monitoredAPICall('github', () =>
         this.fetchRepoInfoWithRetry(repoInfo.owner, repoInfo.repo, authConfig)
       )
-      
+
       // Try to get README content for better description
       let readmeContent = ''
       try {
@@ -111,7 +112,7 @@ export class GitHubPreviewGenerator {
       return this.createPreviewFromAPI(repoData, readmeContent)
     } catch (error) {
       console.warn('Failed to fetch GitHub repo info:', error)
-      
+
       // Handle specific error cases
       if (error instanceof Error) {
         if (error.message.includes('private') || error.message.includes('404')) {
@@ -119,7 +120,7 @@ export class GitHubPreviewGenerator {
           return this.createBasicPreview(repoInfo, url, true)
         }
       }
-      
+
       // Fallback to basic preview
       return this.createBasicPreview(repoInfo, url)
     }
@@ -130,7 +131,7 @@ export class GitHubPreviewGenerator {
    */
   private static getAuthConfig(userToken?: string): GitHubAuthConfig {
     const token = userToken || process.env.GITHUB_TOKEN
-    
+
     if (token) {
       return {
         token,
@@ -138,7 +139,7 @@ export class GitHubPreviewGenerator {
         scopes: ['public_repo'] // Default scopes for public repositories
       }
     }
-    
+
     return { type: 'none' }
   }
 
@@ -148,18 +149,18 @@ export class GitHubPreviewGenerator {
   private static canMakeAPICall(authConfig: GitHubAuthConfig): boolean {
     const key = authConfig.token || 'anonymous'
     const rateLimit = this.rateLimitInfo.get(key)
-    
+
     if (!rateLimit) {
       return true // No rate limit info yet, allow the call
     }
-    
+
     // Check if rate limit has reset
     const now = Math.floor(Date.now() / 1000)
     if (now >= rateLimit.reset) {
       this.rateLimitInfo.delete(key) // Clear old rate limit info
       return true
     }
-    
+
     // Check remaining requests
     return rateLimit.remaining > 0
   }
@@ -169,13 +170,13 @@ export class GitHubPreviewGenerator {
    */
   private static updateRateLimit(response: Response, authConfig: GitHubAuthConfig): void {
     const key = authConfig.token || 'anonymous'
-    
+
     const limit = parseInt(response.headers.get('x-ratelimit-limit') || '0')
     const remaining = parseInt(response.headers.get('x-ratelimit-remaining') || '0')
     const reset = parseInt(response.headers.get('x-ratelimit-reset') || '0')
     const used = parseInt(response.headers.get('x-ratelimit-used') || '0')
     const resource = response.headers.get('x-ratelimit-resource') || 'core'
-    
+
     if (limit > 0) {
       this.rateLimitInfo.set(key, {
         limit,
@@ -191,34 +192,34 @@ export class GitHubPreviewGenerator {
    * Fetch repo info with retry logic
    */
   private static async fetchRepoInfoWithRetry(
-    owner: string, 
-    repo: string, 
+    owner: string,
+    repo: string,
     authConfig: GitHubAuthConfig
   ): Promise<GitHubRepoInfo> {
     let lastError: Error | null = null
-    
+
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
         return await this.fetchRepoInfo(owner, repo, authConfig)
       } catch (error) {
         lastError = error as Error
-        
+
         // Don't retry on certain errors
         if (error instanceof Error) {
-          if (error.message.includes('not found') || 
-              error.message.includes('private') ||
-              error.message.includes('rate limit')) {
+          if (error.message.includes('not found') ||
+            error.message.includes('private') ||
+            error.message.includes('rate limit')) {
             throw error
           }
         }
-        
+
         // Wait before retrying (exponential backoff)
         if (attempt < this.MAX_RETRIES) {
           await this.delay(this.RETRY_DELAY_MS * Math.pow(2, attempt - 1))
         }
       }
     }
-    
+
     throw lastError || new Error('Max retries exceeded')
   }
 
@@ -226,33 +227,33 @@ export class GitHubPreviewGenerator {
    * Fetch README content with retry logic
    */
   private static async fetchReadmeContentWithRetry(
-    owner: string, 
-    repo: string, 
+    owner: string,
+    repo: string,
     authConfig: GitHubAuthConfig
   ): Promise<string> {
     let lastError: Error | null = null
-    
+
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
         return await this.fetchReadmeContent(owner, repo, authConfig)
       } catch (error) {
         lastError = error as Error
-        
+
         // Don't retry on certain errors
         if (error instanceof Error) {
-          if (error.message.includes('not found') || 
-              error.message.includes('rate limit')) {
+          if (error.message.includes('not found') ||
+            error.message.includes('rate limit')) {
             throw error
           }
         }
-        
+
         // Wait before retrying
         if (attempt < this.MAX_RETRIES) {
           await this.delay(this.RETRY_DELAY_MS * Math.pow(2, attempt - 1))
         }
       }
     }
-    
+
     throw lastError || new Error('Max retries exceeded')
   }
 
@@ -290,16 +291,16 @@ export class GitHubPreviewGenerator {
    * Fetch repository information from GitHub API with circuit breaker
    */
   private static async fetchRepoInfo(
-    owner: string, 
-    repo: string, 
+    owner: string,
+    repo: string,
     authConfig: GitHubAuthConfig
   ): Promise<GitHubRepoInfo> {
     const circuitBreaker = CircuitBreakerManager.getBreaker('github-api')
-    
+
     return circuitBreaker.execute(async () => {
       const headers: Record<string, string> = {
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'ThinkChrist-Platform/1.0'
+        'User-Agent': `${config.app.name.replace(/\s+/g, '-')}/1.0`
       }
 
       if (authConfig.token) {
@@ -316,11 +317,11 @@ export class GitHubPreviewGenerator {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null) as GitHubAPIError | null
-        
+
         if (response.status === 404) {
           throw new Error('Repository not found or is private')
         }
-        
+
         if (response.status === 403) {
           // Check if it's a rate limit error
           if (response.headers.get('x-ratelimit-remaining') === '0') {
@@ -328,33 +329,33 @@ export class GitHubPreviewGenerator {
             const resetDate = resetTime ? new Date(parseInt(resetTime) * 1000) : new Date()
             throw new Error(`GitHub API rate limit exceeded. Resets at ${resetDate.toISOString()}`)
           }
-          
+
           // Check if it's a private repository
           if (errorData?.message?.includes('private')) {
             throw new Error('Repository is private and requires authentication')
           }
-          
+
           throw new Error('GitHub API access forbidden - check token permissions')
         }
-        
+
         if (response.status === 401) {
           throw new Error('GitHub API authentication failed - invalid token')
         }
-        
+
         if (response.status >= 500) {
           throw new Error(`GitHub API server error: ${response.status}`)
         }
-        
+
         throw new Error(`GitHub API error: ${response.status} - ${errorData?.message || 'Unknown error'}`)
       }
 
       const data = await response.json()
-      
+
       // Validate required fields
       if (!data.name || !data.owner?.login) {
         throw new Error('Invalid repository data received from GitHub API')
       }
-      
+
       return data
     })
   }
@@ -363,13 +364,13 @@ export class GitHubPreviewGenerator {
    * Fetch README content from repository
    */
   private static async fetchReadmeContent(
-    owner: string, 
-    repo: string, 
+    owner: string,
+    repo: string,
     authConfig: GitHubAuthConfig
   ): Promise<string> {
     const headers: Record<string, string> = {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'ThinkChrist-Platform/1.0'
+      'User-Agent': `${config.app.name.replace(/\s+/g, '-')}/1.0`
     }
 
     if (authConfig.token) {
@@ -392,15 +393,15 @@ export class GitHubPreviewGenerator {
     }
 
     const data = await response.json()
-    
+
     if (!data.content) {
       throw new Error('README content not available')
     }
-    
+
     try {
       // Decode base64 content
       const content = atob(data.content.replace(/\s/g, ''))
-      
+
       // Remove markdown headers and extract meaningful content
       const cleanContent = content
         .replace(/^#+\s+.*$/gm, '') // Remove markdown headers
@@ -409,12 +410,12 @@ export class GitHubPreviewGenerator {
         .replace(/`{1,3}[\s\S]*?`{1,3}/g, '') // Remove code blocks
         .replace(/\n{3,}/g, '\n\n') // Normalize line breaks
         .trim()
-      
+
       // Extract first meaningful paragraph
       const paragraphs = cleanContent.split('\n\n').filter(p => p.trim().length > 20)
       const firstParagraph = paragraphs[0] || cleanContent.substring(0, 200)
-      
-      return firstParagraph.length > 200 
+
+      return firstParagraph.length > 200
         ? firstParagraph.substring(0, 200) + '...'
         : firstParagraph
     } catch (error) {
@@ -427,13 +428,13 @@ export class GitHubPreviewGenerator {
    */
   private static createPreviewFromAPI(repoData: GitHubRepoInfo, readmeContent: string): LinkPreview {
     const description = readmeContent || repoData.description || 'GitHub Repository'
-    
+
     // Format additional info
     const stats = []
     if (repoData.language) stats.push(`Language: ${repoData.language}`)
     if (repoData.stargazers_count > 0) stats.push(`⭐ ${repoData.stargazers_count}`)
     if (repoData.forks_count > 0) stats.push(`🍴 ${repoData.forks_count}`)
-    
+
     const fullDescription = `${description}${stats.length > 0 ? `\n\n${stats.join(' • ')}` : ''}`
 
     return {
@@ -446,13 +447,13 @@ export class GitHubPreviewGenerator {
         owner: repoData.owner.login,
         repo: repoData.name,
         full_name: repoData.full_name,
-        language: repoData.language,
+        language: repoData.language ?? undefined,
         stars: repoData.stargazers_count,
         forks: repoData.forks_count,
         issues: repoData.open_issues_count,
         size: repoData.size,
         topics: repoData.topics || [],
-        license: repoData.license?.name,
+        license: repoData.license?.name ?? undefined,
         created_at: repoData.created_at,
         updated_at: repoData.updated_at,
         pushed_at: repoData.pushed_at,
@@ -470,14 +471,14 @@ export class GitHubPreviewGenerator {
    * Create basic preview without API (fallback)
    */
   private static createBasicPreview(
-    repoInfo: { owner: string; repo: string; path?: string }, 
+    repoInfo: { owner: string; repo: string; path?: string },
     url: string,
     isPrivate = false
   ): LinkPreview {
-    const description = isPrivate 
+    const description = isPrivate
       ? 'Private GitHub Repository (authentication required for details)'
       : 'GitHub Repository'
-    
+
     return {
       title: `${repoInfo.owner}/${repoInfo.repo}`,
       description,
@@ -513,7 +514,7 @@ export class GitHubPreviewGenerator {
    * Get repository clone URL
    */
   static getCloneUrl(owner: string, repo: string, useSSH = false): string {
-    return useSSH 
+    return useSSH
       ? `git@github.com:${owner}/${repo}.git`
       : `https://github.com/${owner}/${repo}.git`
   }
@@ -603,9 +604,9 @@ export class GitHubPreviewGenerator {
   /**
    * Test API connectivity and token validity
    */
-  static async testAPIConnection(token?: string): Promise<{ 
-    success: boolean; 
-    error?: string; 
+  static async testAPIConnection(token?: string): Promise<{
+    success: boolean;
+    error?: string;
     rateLimit?: GitHubRateLimit;
     scopes?: string[];
   }> {
@@ -616,7 +617,7 @@ export class GitHubPreviewGenerator {
       }
 
       const authConfig = this.getAuthConfig(testToken)
-      
+
       // Test with a simple API call to get rate limit info
       const response = await monitoredAPICall('github', () =>
         fetch(`${this.API_BASE_URL}/rate_limit`, {
@@ -629,26 +630,26 @@ export class GitHubPreviewGenerator {
       )
 
       if (!response.ok) {
-        return { 
-          success: false, 
-          error: `API test failed: ${response.status} ${response.statusText}` 
+        return {
+          success: false,
+          error: `API test failed: ${response.status} ${response.statusText}`
         }
       }
 
       const data = await response.json()
       const scopes = response.headers.get('x-oauth-scopes')?.split(', ') || []
-      
+
       this.updateRateLimit(response, authConfig)
-      
-      return { 
+
+      return {
         success: true,
         rateLimit: this.getRateLimit(testToken) || undefined,
         scopes
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
   }

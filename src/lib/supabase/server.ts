@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/logger'
 
 export function createClient() {
   const cookieStore = cookies()
@@ -16,14 +17,26 @@ export function createClient() {
           try {
             cookieStore.set({ name, value, ...options })
           } catch (error) {
-            // Handle error in Server Component
+            // This is expected in Server Components where cookies are read-only
+            // Only log in development for debugging purposes
+            logger.debug('Cookie set operation failed (expected in Server Components)', {
+              component: 'supabase-server',
+              action: 'cookie-set',
+              cookieName: name
+            })
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options })
           } catch (error) {
-            // Handle error in Server Component
+            // This is expected in Server Components where cookies are read-only
+            // Only log in development for debugging purposes
+            logger.debug('Cookie remove operation failed (expected in Server Components)', {
+              component: 'supabase-server',
+              action: 'cookie-remove',
+              cookieName: name
+            })
           }
         },
       },

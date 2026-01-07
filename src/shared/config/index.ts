@@ -1,9 +1,12 @@
+import { currentClient } from '@/clients'
+
 // Configuration files
 export const config = {
   app: {
-    name: 'ThinkChrist Note Sharing Platform',
+    // Override base with client values
+    name: currentClient.branding.appName,
     version: '1.0.0',
-    description: 'A platform for sharing educational resources'
+    description: currentClient.metadata.description
   },
   api: {
     baseUrl: process.env.NEXT_PUBLIC_API_URL || '/api',
@@ -30,5 +33,7 @@ export const config = {
   pagination: {
     defaultPageSize: 20,
     maxPageSize: 100
-  }
+  },
+  branding: currentClient.branding,
+  auth: currentClient.auth
 }

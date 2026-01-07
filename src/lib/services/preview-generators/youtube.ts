@@ -1,4 +1,5 @@
 import type { LinkPreview } from '@/types'
+import { config } from '@/shared/config'
 import { CircuitBreakerManager } from '../circuit-breaker'
 import { monitoredAPICall } from '../api-monitoring-middleware'
 
@@ -41,10 +42,10 @@ export class YouTubePreviewGenerator {
   private static readonly QUOTA_COST_PER_REQUEST = 1 // Cost for videos.list API call
   private static readonly MAX_RETRIES = 3
   private static readonly RETRY_DELAY_MS = 1000
-  
+
   // In-memory quota tracking (in production, this should be stored in Redis/database)
   private static quotaUsage = new Map<string, YouTubeAPIQuota>()
-  
+
   /**
    * Generate preview for YouTube video using YouTube Data API
    */
@@ -58,7 +59,7 @@ export class YouTubePreviewGenerator {
       // Try to get video info from API if key is available
       const apiKey = process.env.YOUTUBE_API_KEY
       if (apiKey && this.canMakeAPICall(apiKey)) {
-        const videoInfo = await monitoredAPICall('youtube', () => 
+        const videoInfo = await monitoredAPICall('youtube', () =>
           this.fetchVideoInfoWithRetry(videoId, apiKey)
         )
         this.updateQuotaUsage(apiKey)
@@ -117,12 +118,12 @@ export class YouTubePreviewGenerator {
     const now = new Date()
     const resetTime = new Date(now)
     resetTime.setUTCHours(8, 0, 0, 0) // 8 AM UTC = Midnight Pacific Time
-    
+
     // If it's already past reset time today, set for tomorrow
     if (now >= resetTime) {
       resetTime.setUTCDate(resetTime.getUTCDate() + 1)
     }
-    
+
     return resetTime
   }
 
@@ -131,29 +132,29 @@ export class YouTubePreviewGenerator {
    */
   private static async fetchVideoInfoWithRetry(videoId: string, apiKey: string): Promise<YouTubeVideoInfo> {
     let lastError: Error | null = null
-    
+
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
         return await this.fetchVideoInfo(videoId, apiKey)
       } catch (error) {
         lastError = error as Error
-        
+
         // Don't retry on certain errors
         if (error instanceof Error) {
-          if (error.message.includes('quota') || 
-              error.message.includes('not found') ||
-              error.message.includes('private')) {
+          if (error.message.includes('quota') ||
+            error.message.includes('not found') ||
+            error.message.includes('private')) {
             throw error
           }
         }
-        
+
         // Wait before retrying (exponential backoff)
         if (attempt < this.MAX_RETRIES) {
           await this.delay(this.RETRY_DELAY_MS * Math.pow(2, attempt - 1))
         }
       }
     }
-    
+
     throw lastError || new Error('Max retries exceeded')
   }
 
@@ -188,14 +189,17 @@ export class YouTubePreviewGenerator {
    */
   private static async fetchVideoInfo(videoId: string, apiKey: string): Promise<YouTubeVideoInfo> {
     const circuitBreaker = CircuitBreakerManager.getBreaker('youtube-api')
-    
+
     return circuitBreaker.execute(async () => {
+      // ... existing imports
+
+      // ... inside call
       const response = await fetch(
         `${this.API_BASE_URL}/videos?id=${videoId}&key=${apiKey}&part=snippet,statistics,contentDetails`,
         {
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'ThinkChrist-Platform/1.0'
+            'User-Agent': `${config.app.name.replace(/\s+/g, '-')}/1.0`
           },
           signal: AbortSignal.timeout(10000) // 10 second timeout
         }
@@ -203,7 +207,7 @@ export class YouTubePreviewGenerator {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null)
-        
+
         if (response.status === 403) {
           // Check if it's a quota error
           if (errorData?.error?.errors?.some((e: any) => e.reason === 'quotaExceeded')) {
@@ -211,35 +215,35 @@ export class YouTubePreviewGenerator {
           }
           throw new Error('YouTube API access forbidden - check API key permissions')
         }
-        
+
         if (response.status === 429) {
           throw new Error('YouTube API rate limit exceeded')
         }
-        
+
         if (response.status === 400) {
           throw new Error('Invalid YouTube API request - check video ID')
         }
-        
+
         if (response.status >= 500) {
           throw new Error(`YouTube API server error: ${response.status}`)
         }
-        
+
         throw new Error(`YouTube API error: ${response.status} - ${errorData?.error?.message || 'Unknown error'}`)
       }
 
       const data = await response.json()
-      
+
       if (!data.items || data.items.length === 0) {
         throw new Error('Video not found or is private')
       }
 
       const item = data.items[0]
-      
+
       // Validate required fields
       if (!item.snippet?.title) {
         throw new Error('Invalid video data received from YouTube API')
       }
-      
+
       return {
         id: videoId,
         title: item.snippet.title,
@@ -260,16 +264,16 @@ export class YouTubePreviewGenerator {
    */
   private static createPreviewFromAPI(videoInfo: YouTubeVideoInfo): LinkPreview {
     // Get the best available thumbnail
-    const thumbnail = videoInfo.thumbnails.maxres?.url || 
-                     videoInfo.thumbnails.high?.url || 
-                     videoInfo.thumbnails.medium?.url ||
-                     videoInfo.thumbnails.default?.url
+    const thumbnail = videoInfo.thumbnails.maxres?.url ||
+      videoInfo.thumbnails.high?.url ||
+      videoInfo.thumbnails.medium?.url ||
+      videoInfo.thumbnails.default?.url
 
     // Parse duration from ISO 8601 format (PT4M13S -> 4:13)
     const duration = this.parseDuration(videoInfo.duration)
 
     // Truncate description if too long
-    const description = videoInfo.description.length > 200 
+    const description = videoInfo.description.length > 200
       ? videoInfo.description.substring(0, 200) + '...'
       : videoInfo.description
 
@@ -283,11 +287,11 @@ export class YouTubePreviewGenerator {
         videoId: videoInfo.id,
         channelTitle: videoInfo.channelTitle,
         publishedAt: videoInfo.publishedAt,
-        duration: videoInfo.duration,
+        durationRaw: videoInfo.duration,
         viewCount: parseInt(videoInfo.viewCount),
         likeCount: videoInfo.likeCount ? parseInt(videoInfo.likeCount) : undefined,
         tags: videoInfo.tags || [],
-        durationFormatted: duration
+        durationFormatted: duration ?? undefined
       },
       cached_at: new Date().toISOString()
     }
@@ -361,7 +365,7 @@ export class YouTubePreviewGenerator {
       high: 'hqdefault',
       maxres: 'maxresdefault'
     }
-    
+
     return `https://img.youtube.com/vi/${videoId}/${qualityMap[quality]}.jpg`
   }
 
@@ -372,11 +376,11 @@ export class YouTubePreviewGenerator {
     if (!apiKey) {
       apiKey = process.env.YOUTUBE_API_KEY
     }
-    
+
     if (!apiKey) {
       return null
     }
-    
+
     return this.quotaUsage.get(apiKey) || null
   }
 
@@ -387,7 +391,7 @@ export class YouTubePreviewGenerator {
     if (!apiKey) {
       apiKey = process.env.YOUTUBE_API_KEY
     }
-    
+
     if (apiKey) {
       this.quotaUsage.delete(apiKey)
     }
@@ -427,15 +431,15 @@ export class YouTubePreviewGenerator {
 
       // Test with a known public video
       const testVideoId = 'dQw4w9WgXcQ' // Rick Roll - should always be available
-      await monitoredAPICall('youtube', () => 
+      await monitoredAPICall('youtube', () =>
         this.fetchVideoInfo(testVideoId, testKey)
       )
-      
+
       return { success: true }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
   }

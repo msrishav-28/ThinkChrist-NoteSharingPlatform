@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { Resource, User, UserInteraction } from '@/types'
 import { DatabaseUtils } from '@/lib/database-utils'
 import { searchCache } from './cache/search-cache'
+import { logger } from '@/lib/logger'
 
 export interface RecommendationScore {
   resourceId: string
@@ -36,7 +37,7 @@ export class RecommendationEngine {
    * Get personalized recommendations for a user
    */
   async getRecommendations(
-    userId: string, 
+    userId: string,
     limit: number = 10,
     excludeInteracted: boolean = true,
     useCache: boolean = true
@@ -56,7 +57,7 @@ export class RecommendationEngine {
 
       // Get user interactions for collaborative filtering
       const userInteractions = await this.getUserInteractions(userId)
-      
+
       // Calculate different recommendation scores with optimized queries
       const [
         collaborativeScores,
@@ -82,7 +83,7 @@ export class RecommendationEngine {
       let filteredScores = combinedScores
       if (excludeInteracted) {
         const interactedResourceIds = new Set(userInteractions.map(i => i.resource_id))
-        filteredScores = combinedScores.filter(score => 
+        filteredScores = combinedScores.filter(score =>
           !interactedResourceIds.has(score.resourceId)
         )
       }
@@ -93,20 +94,20 @@ export class RecommendationEngine {
         .slice(0, limit)
 
       const recommendations = await this.enrichWithResourceDetails(topScores)
-      
+
       // Cache the results
       if (useCache && recommendations.length > 0) {
         try {
           await searchCache.setRecommendations(userId, recommendations as unknown as Resource[], 'general')
         } catch (cacheError) {
-          console.warn('Failed to cache recommendations:', cacheError)
+          logger.warn('Failed to cache recommendations', { error: cacheError })
         }
       }
 
       return recommendations
 
     } catch (error) {
-      console.error('Error generating recommendations:', error)
+      logger.error('Error generating recommendations', { error })
       return []
     }
   }
@@ -115,14 +116,14 @@ export class RecommendationEngine {
    * Collaborative filtering based on user interactions
    */
   private async getCollaborativeFilteringScores(
-    userId: string, 
+    userId: string,
     userInteractions: UserInteraction[]
   ): Promise<RecommendationScore[]> {
     if (userInteractions.length === 0) return []
 
     // Find similar users based on interaction patterns
     const similarUsers = await this.findSimilarUsers(userId, userInteractions)
-    
+
     if (similarUsers.length === 0) return []
 
     // Get resources that similar users interacted with
@@ -136,7 +137,7 @@ export class RecommendationEngine {
 
     // Calculate recommendation scores based on similar user preferences
     const resourceScores = new Map<string, number>()
-    
+
     similarUserInteractions.forEach(interaction => {
       const similarUser = similarUsers.find(u => u.userId === interaction.user_id)
       if (!similarUser) return
@@ -144,9 +145,9 @@ export class RecommendationEngine {
       const currentScore = resourceScores.get(interaction.resource_id) || 0
       const interactionWeight = this.getInteractionWeight(interaction.interaction_type)
       const similarityWeight = similarUser.similarity
-      
+
       resourceScores.set(
-        interaction.resource_id, 
+        interaction.resource_id,
         currentScore + (interactionWeight * similarityWeight)
       )
     })
@@ -163,7 +164,7 @@ export class RecommendationEngine {
    * Content-based recommendations based on user's interaction history
    */
   private async getContentBasedScores(
-    userId: string, 
+    userId: string,
     user: User
   ): Promise<RecommendationScore[]> {
     // Get user's interaction history to understand preferences
@@ -187,7 +188,7 @@ export class RecommendationEngine {
 
     // Analyze user preferences
     const preferences = this.analyzeUserPreferences(interactions)
-    
+
     // Find resources matching user preferences
     const { data: candidateResources } = await this.supabase
       .from('resources')
@@ -211,7 +212,7 @@ export class RecommendationEngine {
    * Popularity-based recommendations
    */
   private async getPopularityScores(
-    department: string, 
+    department: string,
     semester: number
   ): Promise<RecommendationScore[]> {
     const { data: popularResources } = await this.supabase
@@ -228,15 +229,15 @@ export class RecommendationEngine {
       // Calculate popularity score based on engagement metrics
       const ageInDays = Math.max(1, (Date.now() - new Date(resource.created_at).getTime()) / (24 * 60 * 60 * 1000))
       const engagementScore = (resource.upvotes * 3 + resource.downloads * 2 + resource.views) / ageInDays
-      
+
       return {
         resourceId: resource.id,
         score: Math.min(1, engagementScore / 100), // Normalize to 0-1
         reason: 'popularity' as const,
-        metadata: { 
-          upvotes: resource.upvotes, 
-          downloads: resource.downloads, 
-          views: resource.views 
+        metadata: {
+          upvotes: resource.upvotes,
+          downloads: resource.downloads,
+          views: resource.views
         }
       }
     })
@@ -246,7 +247,7 @@ export class RecommendationEngine {
    * Department and course-based recommendations
    */
   private async getDepartmentBasedScores(
-    department: string, 
+    department: string,
     course: string
   ): Promise<RecommendationScore[]> {
     const { data: departmentResources } = await this.supabase
@@ -259,11 +260,11 @@ export class RecommendationEngine {
 
     return departmentResources.map(resource => {
       let score = 0.3 // Base score for same department
-      
+
       if (resource.course === course) {
         score += 0.4 // Bonus for same course
       }
-      
+
       return {
         resourceId: resource.id,
         score,
@@ -277,11 +278,11 @@ export class RecommendationEngine {
    * Find users with similar interaction patterns
    */
   private async findSimilarUsers(
-    userId: string, 
+    userId: string,
     userInteractions: UserInteraction[]
   ): Promise<UserSimilarity[]> {
     const userResourceIds = new Set(userInteractions.map(i => i.resource_id))
-    
+
     // Get interactions from other users on the same resources
     const { data: otherUserInteractions } = await this.supabase
       .from('user_interactions')
@@ -293,18 +294,18 @@ export class RecommendationEngine {
 
     // Calculate similarity scores
     const userSimilarities = new Map<string, { common: number, total: Set<string> }>()
-    
+
     otherUserInteractions.forEach(interaction => {
-      const existing = userSimilarities.get(interaction.user_id) || { 
-        common: 0, 
-        total: new Set() 
+      const existing = userSimilarities.get(interaction.user_id) || {
+        common: 0,
+        total: new Set()
       }
-      
+
       if (userResourceIds.has(interaction.resource_id)) {
         existing.common++
       }
       existing.total.add(interaction.resource_id)
-      
+
       userSimilarities.set(interaction.user_id, existing)
     })
 
@@ -314,7 +315,7 @@ export class RecommendationEngine {
         const intersection = data.common
         const union = userResourceIds.size + data.total.size - intersection
         const similarity = union > 0 ? intersection / union : 0
-        
+
         return {
           userId: otherUserId,
           similarity,
@@ -379,7 +380,7 @@ export class RecommendationEngine {
     const preferredTags = new Set(preferences.preferredTags.map((t: any) => t[0]))
     const tagIntersection = new Set(Array.from(resourceTags).filter(tag => preferredTags.has(tag)))
     const tagUnion = new Set([...Array.from(resourceTags), ...Array.from(preferredTags)])
-    
+
     if (tagUnion.size > 0) {
       score += (tagIntersection.size / tagUnion.size) * 0.4
     }
@@ -516,11 +517,11 @@ export class RecommendationEngine {
   ): Promise<void> {
     try {
       await DatabaseUtils.trackUserInteraction(userId, resourceId, interactionType, metadata)
-      
+
       // Invalidate user's recommendation cache when they interact with content
       await searchCache.invalidateUserRecommendations(userId)
     } catch (error) {
-      console.error('Error tracking interaction:', error)
+      logger.error('Error tracking interaction', { error })
     }
   }
 
@@ -532,12 +533,12 @@ export class RecommendationEngine {
     limit: number = 10
   ): Promise<Map<string, RecommendationResult[]>> {
     const results = new Map<string, RecommendationResult[]>()
-    
+
     // Process in batches to avoid overwhelming the database
     const batchSize = 10
     for (let i = 0; i < userIds.length; i += batchSize) {
       const batch = userIds.slice(i, i + batchSize)
-      
+
       const batchResults = await Promise.allSettled(
         batch.map(async (userId) => {
           const recommendations = await this.getRecommendations(userId, limit, true, false)
@@ -587,13 +588,13 @@ export class RecommendationEngine {
       if (!activeUsers) return
 
       const userIds = Array.from(new Set(activeUsers.map(u => u.user_id)))
-      
+
       // Generate recommendations in batches
       await this.batchGenerateRecommendations(userIds, 20)
-      
-      console.log(`Precomputed recommendations for ${userIds.length} active users`)
+
+      logger.debug(`Precomputed recommendations for ${userIds.length} active users`)
     } catch (error) {
-      console.error('Error precomputing recommendations:', error)
+      logger.error('Error precomputing recommendations', { error })
     }
   }
 
@@ -608,7 +609,7 @@ export class RecommendationEngine {
     // This would require tracking metrics over time
     // For now, return basic cache metrics
     const cacheMetrics = await searchCache.getPerformanceMetrics()
-    
+
     return {
       cacheHitRate: cacheMetrics.recommendations.hitRate,
       averageGenerationTime: 0, // Would need to track timing
@@ -643,7 +644,7 @@ export class RecommendationEngine {
       // Invalidate cache to force regeneration with new feedback
       await searchCache.invalidateUserRecommendations(userId)
     } catch (error) {
-      console.error('Error optimizing recommendations:', error)
+      logger.error('Error optimizing recommendations', { error })
     }
   }
 }

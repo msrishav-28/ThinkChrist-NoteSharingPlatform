@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -25,10 +25,10 @@ import { RecentUploads } from './recent-uploads'
 import { PersonalizedFeed } from './personalized-feed'
 import { QuickInsights } from './quick-insights'
 import { NotificationCenter } from '../notifications/notification-center'
-import { 
-  Settings, 
-  Eye, 
-  EyeOff, 
+import {
+  Settings,
+  Eye,
+  EyeOff,
   MoreVertical,
   Calendar,
   TrendingUp,
@@ -137,7 +137,7 @@ export function PersonalizedDashboard() {
     const defaultWidgets = availableWidgets
       .filter(widget => widget.defaultVisible)
       .map(widget => widget.id)
-    
+
     // Load from user preferences if available
     const savedWidgets = preferences?.dashboard_settings?.visible_widgets
     if (savedWidgets && Array.isArray(savedWidgets)) {
@@ -158,17 +158,17 @@ export function PersonalizedDashboard() {
       const newWidgets = prev.includes(widgetId)
         ? prev.filter(id => id !== widgetId)
         : [...prev, widgetId]
-      
+
       // TODO: Save to user preferences
       // saveDashboardPreferences({ visible_widgets: newWidgets })
-      
+
       return newWidgets
     })
   }
 
   const saveDashboardSettings = async (settings: any) => {
     // TODO: Implement saving dashboard settings to user preferences
-    console.log('Saving dashboard settings:', settings)
+    // Settings would be saved via API call here
   }
 
   const getGreeting = () => {
@@ -182,7 +182,7 @@ export function PersonalizedDashboard() {
     return preferences?.recommendation_settings?.enable_recommendations !== false
   }
 
-  const visibleWidgetComponents = availableWidgets.filter(widget => 
+  const visibleWidgetComponents = availableWidgets.filter(widget =>
     visibleWidgets.includes(widget.id) &&
     (widget.id !== 'recommendations' || shouldShowRecommendations())
   )
@@ -215,7 +215,7 @@ export function PersonalizedDashboard() {
                 )}
               </CardDescription>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -226,7 +226,7 @@ export function PersonalizedDashboard() {
                 <RefreshCw className={`h-4 w-4 mr-2 ${dashboardLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -239,9 +239,9 @@ export function PersonalizedDashboard() {
                     <Layout className="h-4 w-4 mr-2" />
                     {customizationMode ? 'Exit Customization' : 'Customize Layout'}
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuSeparator />
-                  
+
                   <div className="px-2 py-1.5">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="auto-refresh" className="text-sm">Auto Refresh</Label>
@@ -255,7 +255,7 @@ export function PersonalizedDashboard() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="px-2 py-1.5">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="compact-mode" className="text-sm">Compact Mode</Label>
@@ -269,9 +269,9 @@ export function PersonalizedDashboard() {
                       />
                     </div>
                   </div>
-                  
+
                   <DropdownMenuSeparator />
-                  
+
                   {availableWidgets.filter(w => w.customizable).map(widget => (
                     <DropdownMenuItem
                       key={widget.id}
@@ -306,8 +306,8 @@ export function PersonalizedDashboard() {
                   </p>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setCustomizationMode(false)}
               >
@@ -329,7 +329,7 @@ export function PersonalizedDashboard() {
         <TabsContent value="overview" className="space-y-6">
           {/* Statistics - Always visible */}
           <StatsCard />
-          
+
           {/* Dynamic Widgets Grid */}
           <div className={`grid gap-6 ${compactMode ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             {visibleWidgetComponents

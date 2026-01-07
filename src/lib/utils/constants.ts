@@ -1,5 +1,7 @@
+import { config } from '@/shared/config'
+
 // Application constants
-export const APP_NAME = 'ThinkChrist'
+export const APP_NAME = config.app.name
 export const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB
 export const SUPPORTED_FILE_TYPES = [
   'application/pdf',
@@ -17,13 +19,4 @@ export const SUPPORTED_FILE_TYPES = [
   'video/quicktime'
 ]
 
-export const DEPARTMENTS = [
-  'Computer Science',
-  'Information Technology',
-  'Electronics',
-  'Mechanical',
-  'Civil',
-  'Electrical',
-  'Chemical',
-  'Biotechnology'
-]
+export const DEPARTMENTS = config.auth.departments || []

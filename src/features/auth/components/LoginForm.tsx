@@ -10,11 +10,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/lib/hooks/use-toast'
-import { validateChristEmail } from '../utils'
+import { validateInstitutionEmail } from '../utils'
+
+import { config } from '@/shared/config'
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email').refine(validateChristEmail, {
-    message: 'Please use your Christ University email (e.g., name@btech.christuniversity.in)',
+  email: z.string().email('Invalid email').refine((email) => validateInstitutionEmail(email), {
+    message: `Please use your ${config.branding.organizationName} email`,
   }),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 })
@@ -37,7 +39,7 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true)
-    
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -71,9 +73,9 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+        <CardTitle className="text-2xl font-bold">{config.branding.auth.loginTitle}</CardTitle>
         <CardDescription>
-          Enter your Christ University email to sign in
+          {config.branding.auth.loginDescription}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -81,7 +83,7 @@ export function LoginForm() {
           <div className="space-y-2">
             <Input
               type="email"
-              placeholder="yourname@dept.christuniversity.in"
+              placeholder={config.branding.auth.emailPlaceholder}
               {...form.register('email')}
               disabled={loading}
             />

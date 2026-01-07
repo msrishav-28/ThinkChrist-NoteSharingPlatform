@@ -1,3 +1,98 @@
+// Metadata type definitions for type safety
+// Index signature allows additional properties while still providing type hints
+export interface ContentMetadata {
+  wordCount?: number
+  pageCount?: number
+  duration?: number
+  resolution?: { width: number; height: number }
+  linesOfCode?: number
+  language?: string
+  encoding?: string
+  textContent?: string
+  estimatedTime?: number
+  [key: string]: any
+}
+
+export interface LinkPreviewMetadata {
+  // YouTube-specific properties
+  videoId?: string
+  channelName?: string
+  channelTitle?: string
+  channelId?: string
+  viewCount?: number
+  likeCount?: number
+  subscriberCount?: number
+  publishedAt?: string
+  duration?: number
+  durationFormatted?: string
+
+  // GitHub-specific properties
+  owner?: string
+  repo?: string
+  full_name?: string
+  stars?: number
+  forks?: number
+  issues?: number
+  size?: number
+  topics?: string[]
+  license?: string
+  created_at?: string
+  updated_at?: string
+  pushed_at?: string
+  default_branch?: string
+  archived?: boolean
+  private?: boolean
+  clone_url?: string
+  readme_excerpt?: string
+  fallback?: boolean
+  url?: string
+
+  // Article/general properties
+  language?: string
+  author?: string
+  publishDate?: string
+  readingTime?: number
+  tags?: string[]
+  domain?: string
+  site_name?: string
+
+  // Allow additional properties for extensibility
+  [key: string]: any
+}
+
+export interface InteractionData {
+  searchQuery?: string
+  searchFilters?: Record<string, string | number | boolean>
+  sourceUrl?: string
+  rating?: number
+  reason?: string
+  duration?: number
+  scrollDepth?: number
+  [key: string]: any
+}
+
+export interface NotificationData {
+  resourceId?: string
+  resourceTitle?: string
+  achievement?: string
+  points?: number
+  voterId?: string
+  voterName?: string
+  voteType?: 'upvote' | 'downvote'
+  collectionId?: string
+  collectionTitle?: string
+  systemMessage?: string
+  [key: string]: any
+}
+
+export interface ResourceTypeMetadata {
+  detectedFrom?: 'filename' | 'mimetype' | 'url' | 'content'
+  platform?: string
+  embedUrl?: string
+  originalUrl?: string
+  [key: string]: any
+}
+
 export interface User {
   id: string
   email: string
@@ -14,26 +109,26 @@ export interface Resource {
   id: string
   title: string
   description: string | null
-  
+
   // Enhanced resource type support
   resource_type: 'document' | 'video' | 'link' | 'code' | 'article'
-  
+
   // File-based resources (now optional)
   file_url?: string
   file_name?: string
   file_size?: number
   file_type?: string
-  
+
   // Link-based resources
   external_url?: string
   link_preview?: LinkPreview
-  
+
   // Enhanced metadata
   estimated_time?: number
   difficulty_level?: 'beginner' | 'intermediate' | 'advanced'
-  content_metadata: Record<string, any>
+  content_metadata: ContentMetadata
   tags: string[]
-  
+
   // Existing fields
   department: string
   course: string
@@ -87,7 +182,7 @@ export interface LinkPreview {
   thumbnail?: string
   favicon?: string
   type: 'youtube' | 'github' | 'article' | 'document' | 'generic'
-  metadata: Record<string, any>
+  metadata: LinkPreviewMetadata
   cached_at: string
 }
 
@@ -147,7 +242,7 @@ export interface UserInteraction {
   user_id: string
   resource_id: string
   interaction_type: 'view' | 'download' | 'share' | 'bookmark' | 'search_click' | 'preview_click'
-  interaction_data: Record<string, any>
+  interaction_data: InteractionData
   created_at: string
 }
 
@@ -157,7 +252,7 @@ export interface Notification {
   type: 'achievement' | 'vote_received' | 'new_resource' | 'collection_shared' | 'system'
   title: string
   message?: string
-  data: Record<string, any>
+  data: NotificationData
   is_read: boolean
   created_at: string
 }
@@ -200,7 +295,7 @@ export type ResourceType = 'document' | 'video' | 'link' | 'code' | 'article'
 export interface ResourceTypeDetectionResult {
   type: ResourceType
   confidence: number
-  metadata?: Record<string, any>
+  metadata?: ResourceTypeMetadata
 }
 
 export interface FileTypeInfo {

@@ -1,15 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { validateChristEmail } from '@/features/auth/utils'
+import { validateInstitutionEmail } from '@/features/auth/utils'
+import { config } from '@/shared/config'
 
 export async function POST(request: Request) {
   try {
     const { email, password, full_name, department, semester } = await request.json()
 
-    // Validate Christ email
-    if (!validateChristEmail(email)) {
+    // Validate email
+    if (!validateInstitutionEmail(email)) {
       return NextResponse.json(
-        { error: 'Please use your Christ University email (e.g., name@btech.christuniversity.in)' },
+        { error: `Please use your ${config.branding.organizationName} email (e.g., ${config.branding.auth.emailPlaceholder.split('@')[1]})` },
         { status: 400 }
       )
     }

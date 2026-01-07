@@ -7,15 +7,16 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Clock,
   Activity,
   RefreshCw,
   Zap
 } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface APIHealthStatus {
   service: 'youtube' | 'github'
@@ -98,12 +99,12 @@ export function APIMonitoringDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ alertId })
       })
-      
+
       if (response.ok) {
         fetchData() // Refresh data
       }
     } catch (err) {
-      console.error('Failed to resolve alert:', err)
+      logger.error('Failed to resolve alert', { error: err })
     }
   }
 
@@ -111,10 +112,10 @@ export function APIMonitoringDashboard() {
     try {
       const response = await fetch('/api/admin/monitoring?action=test')
       const result = await response.json()
-      console.log('Connection test results:', result)
+      logger.debug('Connection test results', { result })
       fetchData() // Refresh data after test
     } catch (err) {
-      console.error('Failed to test connections:', err)
+      logger.error('Failed to test connections', { error: err })
     }
   }
 
@@ -227,17 +228,17 @@ export function APIMonitoringDashboard() {
                 <Badge className={getStatusColor(health.status)}>
                   {health.status}
                 </Badge>
-                
+
                 {health.responseTime && (
                   <div className="text-sm text-gray-600">
                     Response Time: {health.responseTime.toFixed(0)}ms
                   </div>
                 )}
-                
+
                 <div className="text-sm text-gray-600">
                   Error Rate: {(health.errorRate * 100).toFixed(1)}%
                 </div>
-                
+
                 {health.quotaUsage !== undefined && (
                   <div className="space-y-1">
                     <div className="text-sm text-gray-600">
@@ -246,7 +247,7 @@ export function APIMonitoringDashboard() {
                     <Progress value={health.quotaUsage * 100} className="h-2" />
                   </div>
                 )}
-                
+
                 <div className="text-xs text-gray-500">
                   Last checked: {new Date(health.lastChecked).toLocaleTimeString()}
                 </div>
@@ -306,7 +307,7 @@ export function APIMonitoringDashboard() {
           <TabsTrigger value="youtube">YouTube Metrics</TabsTrigger>
           <TabsTrigger value="github">GitHub Metrics</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="youtube">
           <Card>
             <CardHeader>
@@ -336,7 +337,7 @@ export function APIMonitoringDashboard() {
                   </div>
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 {data.metrics.youtube.slice(-7).map((metric, index) => (
                   <div key={index} className="flex items-center justify-between p-2 border rounded">
@@ -355,7 +356,7 @@ export function APIMonitoringDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="github">
           <Card>
             <CardHeader>
@@ -389,7 +390,7 @@ export function APIMonitoringDashboard() {
                   </div>
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 {data.metrics.github.slice(-7).map((metric, index) => (
                   <div key={index} className="flex items-center justify-between p-2 border rounded">

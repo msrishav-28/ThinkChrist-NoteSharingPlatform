@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { config } from '@/shared/config'
+import { logger } from '@/lib/logger'
 
 export interface DigestData {
   user: {
@@ -33,7 +35,7 @@ export interface DigestData {
 
 export class EmailDigestService {
   private _supabase: ReturnType<typeof createClient> | null = null
-  
+
   private get supabase() {
     if (!this._supabase) {
       this._supabase = createClient()
@@ -51,7 +53,7 @@ export class EmailDigestService {
         .single()
 
       if (userError || !user) {
-        console.error('Error fetching user:', userError)
+        logger.error('Error fetching user', { error: userError })
         return null
       }
 
@@ -87,7 +89,7 @@ export class EmailDigestService {
         .limit(10)
 
       if (resourcesError) {
-        console.error('Error fetching new resources:', resourcesError)
+        logger.error('Error fetching new resources', { error: resourcesError })
       }
 
       // Get user's recent achievements
@@ -100,7 +102,7 @@ export class EmailDigestService {
         .order('created_at', { ascending: false })
 
       if (achievementsError) {
-        console.error('Error fetching achievements:', achievementsError)
+        logger.error('Error fetching achievements', { error: achievementsError })
       }
 
       // Get department statistics
@@ -112,7 +114,7 @@ export class EmailDigestService {
         .limit(5)
 
       if (usersError) {
-        console.error('Error fetching department users:', usersError)
+        logger.error('Error fetching department users', { error: usersError })
       }
 
       const { count: totalResources } = await this.supabase
@@ -151,7 +153,7 @@ export class EmailDigestService {
         }
       }
     } catch (error) {
-      console.error('Error generating weekly digest:', error)
+      logger.error('Error generating weekly digest', { error })
       return null
     }
   }
@@ -186,7 +188,7 @@ export class EmailDigestService {
 
       return inactiveUsers
     } catch (error) {
-      console.error('Error getting inactive users:', error)
+      logger.error('Error getting inactive users', { error })
       return []
     }
   }
@@ -194,12 +196,14 @@ export class EmailDigestService {
   generateEmailHTML(digestData: DigestData): string {
     const { user, newResources, achievements, departmentStats } = digestData
 
+
+
     return `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <title>ThinkChrist Weekly Digest</title>
+        <title>${config.branding.appName} Weekly Digest</title>
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -214,7 +218,7 @@ export class EmailDigestService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>ThinkChrist Weekly Digest</h1>
+            <h1>${config.branding.appName} Weekly Digest</h1>
             <p>Hello ${user.full_name}! Here's what happened this week in ${user.department}.</p>
           </div>
 
@@ -267,9 +271,9 @@ export class EmailDigestService {
     try {
       // In a real implementation, you would send the email here
       // For now, we'll just log it
-      console.log(`Would send digest email to ${digestData.user.email}`)
-      console.log('Email content:', this.generateEmailHTML(digestData))
-      
+      logger.debug(`Would send digest email to ${digestData.user.email}`)
+      logger.debug('Email content generated', { recipientEmail: digestData.user.email })
+
       // TODO: Integrate with actual email service
       // Example with a hypothetical email service:
       // await emailService.send({
@@ -280,7 +284,7 @@ export class EmailDigestService {
 
       return true
     } catch (error) {
-      console.error('Error sending digest email:', error)
+      logger.error('Error sending digest email', { error })
       return false
     }
   }

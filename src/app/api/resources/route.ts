@@ -1,43 +1,57 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// GET /api/resources - List all resources with optional filtering
+export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    const { data: resource, error } = await supabase
+    const { searchParams } = new URL(request.url)
+
+    // Extract query parameters for filtering
+    const department = searchParams.get('department')
+    const course = searchParams.get('course')
+    const semester = searchParams.get('semester')
+    const resourceType = searchParams.get('resourceType')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = parseInt(searchParams.get('offset') || '0')
+
+    // Build query
+    let query = supabase
       .from('resources')
       .select(`
         *,
-        uploader:users!uploaded_by(id, full_name, department)
-      `)
-      .eq('id', params.id)
-      .single()
+        uploader:users!uploaded_by(id, full_name, department, badge_level)
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    // Apply filters if provided
+    if (department) {
+      query = query.eq('department', department)
+    }
+    if (course) {
+      query = query.eq('course', course)
+    }
+    if (semester) {
+      query = query.eq('semester', parseInt(semester))
+    }
+    if (resourceType) {
+      query = query.eq('resource_type', resourceType)
+    }
+
+    const { data: resources, error, count } = await query
 
     if (error) {
-      return NextResponse.json({ error: 'Resource not found' }, { status: 404 })
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Get user vote if logged in
-    if (user) {
-      const { data: vote } = await supabase
-        .from('votes')
-        .select('vote_type')
-        .match({ user_id: user.id, resource_id: params.id })
-        .single()
-      
-      if (vote) {
-        resource.user_vote = vote.vote_type
-      }
-    }
-
-    return NextResponse.json(resource)
+    return NextResponse.json({
+      resources,
+      total: count,
+      limit,
+      offset
+    })
   } catch (error) {
-    console.error('Resource fetch error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -45,48 +59,54 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// POST /api/resources - Create a new resource
+export async function POST(request: NextRequest) {
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check ownership
-    const { data: resource } = await supabase
+    const body = await request.json()
+
+    // Validate required fields
+    const requiredFields = ['title', 'department', 'course', 'semester', 'subject']
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return NextResponse.json(
+          { error: `Missing required field: ${field}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Create resource
+    const { data: resource, error } = await supabase
       .from('resources')
-      .select('uploaded_by, file_url')
-      .eq('id', params.id)
+      .insert({
+        ...body,
+        uploaded_by: user.id,
+        resource_type: body.resource_type || 'document',
+        upvotes: 0,
+        downvotes: 0,
+        downloads: 0,
+        views: 0,
+        is_verified: false
+      })
+      .select(`
+        *,
+        uploader:users!uploaded_by(id, full_name, department, badge_level)
+      `)
       .single()
-
-    if (!resource || resource.uploaded_by !== user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    // Delete from storage
-    const fileName = resource.file_url.split('/').pop()
-    if (fileName) {
-      await supabase.storage.from('resources').remove([fileName])
-    }
-
-    // Delete database record
-    const { error } = await supabase
-      .from('resources')
-      .delete()
-      .eq('id', params.id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ resource }, { status: 201 })
   } catch (error) {
-    console.error('Delete error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

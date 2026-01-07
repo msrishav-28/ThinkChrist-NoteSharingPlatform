@@ -8,7 +8,9 @@ export default function MonitoringPage() {
   )
 }
 
+import { config } from '@/shared/config'
+
 export const metadata = {
-  title: 'API Monitoring - ThinkChrist Admin',
+  title: `API Monitoring - ${config.branding.appName} Admin`,
   description: 'Monitor external API usage and performance'
 }

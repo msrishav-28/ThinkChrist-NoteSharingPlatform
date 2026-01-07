@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 import type { Resource } from '@/types'
 
 export interface LegacyResource {
@@ -126,8 +127,8 @@ export class BackwardCompatibilityService {
     const name = fileName?.toLowerCase() || ''
 
     // Video files
-    if (type.includes('video') || 
-        name.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v)$/)) {
+    if (type.includes('video') ||
+      name.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v)$/)) {
       return 'video'
     }
 
@@ -239,7 +240,7 @@ export class BackwardCompatibilityService {
     try {
       // Check if storage bucket exists
       const { data: buckets, error: bucketError } = await this.supabase.storage.listBuckets()
-      
+
       if (bucketError) {
         issues.push(`Storage bucket check failed: ${bucketError.message}`)
       } else {
@@ -308,44 +309,44 @@ export class BackwardCompatibilityService {
   }> {
     const allErrors: string[] = []
 
-    console.log('🔄 Starting backward compatibility migration...')
+    logger.info('🔄 Starting backward compatibility migration...')
 
     // 1. Validate current state
-    console.log('📋 Validating file upload compatibility...')
+    logger.info('📋 Validating file upload compatibility...')
     const validation = await this.validateFileUploadCompatibility()
     if (!validation.success) {
       allErrors.push(...validation.issues)
-      console.error('❌ Validation failed:', validation.issues)
+      logger.error('❌ Validation failed', { issues: validation.issues })
     } else {
-      console.log('✅ File upload compatibility validated')
+      logger.info('✅ File upload compatibility validated')
     }
 
     // 2. Migrate existing resources
-    console.log('📋 Migrating existing resources...')
+    logger.info('📋 Migrating existing resources...')
     const resourceMigration = await this.migrateExistingResources()
     if (!resourceMigration.success) {
       allErrors.push(...resourceMigration.errors)
-      console.error('❌ Resource migration had errors:', resourceMigration.errors)
+      logger.error('❌ Resource migration had errors', { errors: resourceMigration.errors })
     } else {
-      console.log(`✅ Migrated ${resourceMigration.migratedCount} resources`)
+      logger.info(`✅ Migrated ${resourceMigration.migratedCount} resources`)
     }
 
     // 3. Ensure user preferences
-    console.log('📋 Ensuring user preferences...')
+    logger.info('📋 Ensuring user preferences...')
     const preferenceMigration = await this.ensureUserPreferences()
     if (!preferenceMigration.success) {
       allErrors.push(...preferenceMigration.errors)
-      console.error('❌ User preferences migration had errors:', preferenceMigration.errors)
+      logger.error('❌ User preferences migration had errors', { errors: preferenceMigration.errors })
     } else {
-      console.log(`✅ Created preferences for ${preferenceMigration.createdCount} users`)
+      logger.info(`✅ Created preferences for ${preferenceMigration.createdCount} users`)
     }
 
     const success = allErrors.length === 0
 
     if (success) {
-      console.log('🎉 Backward compatibility migration completed successfully!')
+      logger.info('🎉 Backward compatibility migration completed successfully!')
     } else {
-      console.error('❌ Migration completed with errors:', allErrors)
+      logger.error('❌ Migration completed with errors', { errors: allErrors })
     }
 
     return {

@@ -1,15 +1,18 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { AuthProvider } from '@/context/auth-context'
 import { Toaster } from '@/components/ui/toaster'
 
-const inter = Inter({ subsets: ['latin'] })
+import { config } from '@/shared/config'
+
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'Christ UniConnect - Knowledge Hub & Innovation Forge',
-  description: 'Learn Together, Grow Together - A collaborative platform for Christ University students',
+  title: config.branding.appName,
+  description: config.app.description,
   icons: {
     icon: '/favicon.ico',
   },
@@ -22,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${outfit.variable} ${inter.variable} font-sans`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

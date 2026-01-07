@@ -11,11 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/lib/hooks/use-toast'
-import { validateChristEmail, getDepartments } from '../utils'
+import { validateInstitutionEmail, getDepartments } from '../utils'
+
+import { config } from '@/shared/config'
 
 const registerSchema = z.object({
-  email: z.string().email('Invalid email').refine(validateChristEmail, {
-    message: 'Please use your Christ University email (e.g., name@btech.christuniversity.in)',
+  email: z.string().email('Invalid email').refine((email) => validateInstitutionEmail(email), {
+    message: `Please use your ${config.branding.organizationName} email`,
   }),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -44,7 +46,7 @@ export function RegisterForm() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true)
-    
+
     try {
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -104,7 +106,7 @@ export function RegisterForm() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
-          Join the Christ UniConnect community
+          Join the {config.branding.organizationName} community
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -123,7 +125,7 @@ export function RegisterForm() {
           <div className="space-y-2">
             <Input
               type="email"
-              placeholder="yourname@dept.christuniversity.in"
+              placeholder={config.branding.auth.emailPlaceholder}
               {...form.register('email')}
               disabled={loading}
             />
