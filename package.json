@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup-db": "node scripts/setup-db.js"
+    "setup-db": "node scripts/setup-db.js",
+    "clean": "npx rimraf .next tsconfig.tsbuildinfo"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -30,7 +31,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.2.0",
-    "framer-motion": "^12.24.9",
+    "framer-motion": "^11.15.0",
     "lucide-react": "^0.309.0",
     "next": "14.0.4",
     "next-themes": "^0.2.1",

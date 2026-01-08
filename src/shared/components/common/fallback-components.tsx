@@ -110,11 +110,11 @@ export const SearchFallback: React.FC<{
     <Alert>
       <Wifi className="h-4 w-4" />
       <AlertDescription>
-        Search is temporarily unavailable. 
+        Search is temporarily unavailable.
         {fallbackResults && fallbackResults.length > 0 && ' Showing cached results.'}
       </AlertDescription>
     </Alert>
-    
+
     {onRetry && (
       <div className="flex justify-center">
         <Button onClick={onRetry} variant="outline">
@@ -127,7 +127,7 @@ export const SearchFallback: React.FC<{
     {fallbackResults && fallbackResults.length > 0 && (
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          Showing {fallbackResults.length} cached results for "{query}"
+          Showing {fallbackResults.length} cached results for &quot;{query}&quot;
         </p>
         {/* Render fallback results here */}
       </div>
@@ -164,7 +164,7 @@ export const UploadFallback: React.FC<{
           </AlertDescription>
         </Alert>
       )}
-      
+
       <div className="flex gap-2">
         {onRetry && (
           <Button onClick={onRetry} size="sm" className="flex-1">
@@ -197,13 +197,13 @@ export const ExternalServiceFallback: React.FC<{
       <p className="text-sm text-muted-foreground mb-4">
         The {serviceName} service is temporarily unavailable.
       </p>
-      
+
       {fallbackContent && (
         <div className="mb-4">
           {fallbackContent}
         </div>
       )}
-      
+
       {onRetry && (
         <Button onClick={onRetry} variant="outline" size="sm">
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -239,7 +239,7 @@ export const LoadingFallback: React.FC<{
             </CardContent>
           </Card>
         )
-      
+
       case 'list':
         return (
           <div className="flex items-center space-x-4 p-4">
@@ -250,7 +250,7 @@ export const LoadingFallback: React.FC<{
             </div>
           </div>
         )
-      
+
       case 'grid':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -265,7 +265,7 @@ export const LoadingFallback: React.FC<{
             ))}
           </div>
         )
-      
+
       case 'preview':
         return (
           <div className="border rounded-lg p-4">
@@ -279,7 +279,7 @@ export const LoadingFallback: React.FC<{
             </div>
           </div>
         )
-      
+
       default:
         return <Skeleton className="h-20 w-full" />
     }
@@ -300,24 +300,24 @@ export const LoadingFallback: React.FC<{
 export const NetworkErrorFallback: React.FC<{
   onRetry?: () => void
   message?: string
-}> = ({ 
-  onRetry, 
-  message = 'Network connection issue. Please check your internet connection.' 
+}> = ({
+  onRetry,
+  message = 'Network connection issue. Please check your internet connection.'
 }) => (
-  <Card className="border-destructive">
-    <CardContent className="p-6 text-center">
-      <Wifi className="h-12 w-12 text-destructive mx-auto mb-4" />
-      <h3 className="font-medium mb-2">Connection Problem</h3>
-      <p className="text-sm text-muted-foreground mb-4">{message}</p>
-      {onRetry && (
-        <Button onClick={onRetry} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Try Again
-        </Button>
-      )}
-    </CardContent>
-  </Card>
-)
+    <Card className="border-destructive">
+      <CardContent className="p-6 text-center">
+        <Wifi className="h-12 w-12 text-destructive mx-auto mb-4" />
+        <h3 className="font-medium mb-2">Connection Problem</h3>
+        <p className="text-sm text-muted-foreground mb-4">{message}</p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  )
 
 /**
  * Permission denied fallback

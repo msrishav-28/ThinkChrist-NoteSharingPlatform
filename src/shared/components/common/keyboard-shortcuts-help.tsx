@@ -43,12 +43,12 @@ export function KeyboardShortcutsHelp({ shortcuts }: KeyboardShortcutsHelpProps)
 
   const formatShortcut = (shortcut: KeyboardShortcut) => {
     const keys = []
-    
+
     if (shortcut.ctrlKey) keys.push('Ctrl')
     if (shortcut.metaKey) keys.push('Cmd')
     if (shortcut.altKey) keys.push('Alt')
     if (shortcut.shiftKey) keys.push('Shift')
-    
+
     // Format special keys
     let mainKey = shortcut.key
     if (mainKey === ' ') mainKey = 'Space'
@@ -57,9 +57,9 @@ export function KeyboardShortcutsHelp({ shortcuts }: KeyboardShortcutsHelpProps)
     if (mainKey === 'ArrowLeft') mainKey = '←'
     if (mainKey === 'ArrowRight') mainKey = '→'
     if (mainKey === 'Escape') mainKey = 'Esc'
-    
+
     keys.push(mainKey)
-    
+
     return keys
   }
 
@@ -74,7 +74,7 @@ export function KeyboardShortcutsHelp({ shortcuts }: KeyboardShortcutsHelpProps)
             </Badge>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {Object.entries(groupedShortcuts).map(([category, categoryShortcuts]) => (
             <div key={category}>
@@ -101,10 +101,10 @@ export function KeyboardShortcutsHelp({ shortcuts }: KeyboardShortcutsHelpProps)
             </div>
           ))}
         </div>
-        
+
         <div className="mt-6 pt-4 border-t text-xs text-muted-foreground">
           <p>
-            Keyboard shortcuts work when you're not typing in an input field. 
+            Keyboard shortcuts work when you&apos;re not typing in an input field.
             Press <Kbd>Esc</Kbd> to close dialogs and clear focus.
           </p>
         </div>

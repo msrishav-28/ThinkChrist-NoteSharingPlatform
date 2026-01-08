@@ -28,7 +28,7 @@ export function TagFilters({
 }: TagFiltersProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  
+
   const { existingTags, searchTags } = useTags({
     department,
     course
@@ -54,7 +54,7 @@ export function TagFilters({
     onTagsChange([])
   }
 
-  const filteredExistingTags = existingTags.filter(tag => 
+  const filteredExistingTags = existingTags.filter(tag =>
     !selectedTags.includes(tag) &&
     tag.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -110,7 +110,7 @@ export function TagFilters({
             </span>
           </Button>
         </CollapsibleTrigger>
-        
+
         <CollapsibleContent className="space-y-4 mt-4">
           {/* Tag Search */}
           <div>
@@ -148,7 +148,7 @@ export function TagFilters({
                   ))}
                   {filteredExistingTags.length === 0 && searchQuery && (
                     <p className="text-sm text-muted-foreground">
-                      No tags found matching "{searchQuery}"
+                      No tags found matching &quot;{searchQuery}&quot;
                     </p>
                   )}
                 </div>

@@ -364,7 +364,7 @@ export function SearchAnalyticsDashboard({
                 {poorPerformers.slice(0, 4).map((query, index) => (
                   <div key={index} className="flex items-center justify-between p-2 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-900/30">
                     <div className="max-w-[70%]">
-                      <div className="font-medium text-sm truncate text-red-700 dark:text-red-300">"{query.query}"</div>
+                      <div className="font-medium text-sm truncate text-red-700 dark:text-red-300">&quot;{query.query}&quot;</div>
                       <div className="text-xs text-red-600/80 dark:text-red-400/80">CTR: {(query.clickThroughRate * 100).toFixed(0)}%</div>
                     </div>
                     <AlertTriangle className="h-4 w-4 text-red-500" />

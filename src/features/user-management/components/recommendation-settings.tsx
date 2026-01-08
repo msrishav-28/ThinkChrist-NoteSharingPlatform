@@ -29,7 +29,7 @@ export function RecommendationSettings({ settings, onUpdate, disabled }: Recomme
     setSaving(true)
     const success = await onUpdate(localSettings)
     setSaving(false)
-    
+
     if (!success) {
       // Reset to original settings on failure
       setLocalSettings(settings)
@@ -56,7 +56,7 @@ export function RecommendationSettings({ settings, onUpdate, disabled }: Recomme
               <Checkbox
                 id="enable_recommendations"
                 checked={localSettings.enable_recommendations}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   handleSettingChange('enable_recommendations', checked as boolean)
                 }
                 disabled={disabled}
@@ -78,7 +78,7 @@ export function RecommendationSettings({ settings, onUpdate, disabled }: Recomme
               <Checkbox
                 id="track_interactions"
                 checked={localSettings.track_interactions}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   handleSettingChange('track_interactions', checked as boolean)
                 }
                 disabled={disabled || !localSettings.enable_recommendations}
@@ -105,7 +105,7 @@ export function RecommendationSettings({ settings, onUpdate, disabled }: Recomme
                     Recommendations Disabled
                   </h4>
                   <p className="text-sm text-yellow-700 mt-1">
-                    You won't see personalized content recommendations on your dashboard. 
+                    You won&apos;t see personalized content recommendations on your dashboard.
                     You can still browse and search for resources manually.
                   </p>
                 </div>

@@ -20,7 +20,7 @@ This directory contains SQL migration files for the ThinkUni platform database s
 - Creates contribution tracking for gamification
 - Tracks user activities and points earned
 
-### 005_enhance_platform_schema.sql ⭐ **NEW**
+### 005_enhance_platform_schema.sql **NEW**
 - **Platform Enhancement Migration**
 - Extends resources table with multi-resource type support
 - Adds new tables for enhanced functionality:

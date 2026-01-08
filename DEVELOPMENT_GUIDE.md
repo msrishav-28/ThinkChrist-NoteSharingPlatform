@@ -10,6 +10,7 @@
 - [Component Guidelines](#component-guidelines)
 - [Hook Patterns](#hook-patterns)
 - [API Development](#api-development)
+- [Security & Utilities](#security--utilities)
 - [Best Practices](#best-practices)
 
 ---
@@ -22,12 +23,17 @@ Each feature is self-contained and independent:
 
 ```
 src/features/
-├── auth/              # Authentication & authorization
-├── resources/         # Resource management
-├── gamification/      # Points, badges, leaderboards
-├── notifications/     # Notification system
 ├── admin/             # Administrative tools
-└── dashboard/         # Main dashboard
+├── analytics/         # Privacy-first usage analytics
+├── auth/              # Authentication & authorization
+├── collections/       # Resource collections
+├── dashboard/         # Main dashboard
+├── gamification/      # Points, badges, leaderboards
+├── notifications/     # Notification & alert system
+├── resources/         # Resource management
+├── search/            # Advanced search
+├── settings/          # User preferences
+└── user-management/   # User administration
 ```
 
 ### Shared Resources
@@ -41,6 +47,16 @@ src/shared/
 ├── utils/             # Utility functions
 ├── types/             # Global type definitions
 └── config/            # Configuration files
+```
+
+### Application Structure
+
+```
+src/app/
+├── (auth)/            # Authentication routes (login, register)
+├── (dashboard)/       # Dashboard routes (protected)
+├── admin/             # Admin panel routes
+└── api/               # API routes (24 endpoints)
 ```
 
 ---
@@ -100,13 +116,13 @@ export { YourFeatureForm } from './YourFeatureForm'
 ### Import Patterns
 
 ```typescript
-// ✅ Good: Import from feature index
+// Good: Import from feature index
 import { YourFeatureComponent, useYourFeatureData } from '@/features/your-feature'
 
-// ✅ Good: Import shared components
+// Good: Import shared components
 import { Button, Modal } from '@/shared/components/ui'
 
-// ❌ Avoid: Direct imports from internal files
+// Avoid: Direct imports from internal files
 import { Component } from '@/features/your-feature/components/Component'
 ```
 
@@ -259,6 +275,56 @@ export async function POST(request: NextRequest) {
 
 ---
 
+## Security & Utilities
+
+### Privacy-First Analytics
+
+```typescript
+import { analytics } from '@/lib/services/privacy-analytics'
+
+// Track page view
+analytics.trackPageView('/dashboard')
+
+// Track custom event
+analytics.trackEvent({
+  event_type: 'resource_download',
+  resource_id: '123',
+  metadata: { file_type: 'pdf' }
+})
+```
+
+### Safe Logging & Data Masking
+
+Always use the centralized logger which automatically masks sensitive data:
+
+```typescript
+import { logger } from '@/lib/logger'
+
+// Safe: PII automatically masked
+logger.info('User action', { user: userData, action: 'login' })
+```
+
+### Rate Limiting
+
+```typescript
+import { withRateLimit, rateLimitConfigs } from '@/lib/security'
+
+export const POST = withRateLimit(async (req) => {
+  // Your handler code
+}, rateLimitConfigs.auth) // Options: api, auth, upload, search
+```
+
+### XSS Prevention
+
+```typescript
+import { highlightSearchTerms } from '@/lib/security/sanitize'
+
+const safeHtml = highlightSearchTerms(userInput, searchQuery)
+return <span dangerouslySetInnerHTML={{ __html: safeHtml }} />
+```
+
+---
+
 ## Best Practices
 
 ### Error Boundaries
@@ -307,74 +373,15 @@ function App() {
 
 ---
 
-## Security & Utilities
-
-### Privacy-First Analytics
-
-Use the self-hosted analytics service for tracking events without PII:
-
-```typescript
-import { analytics } from '@/lib/services/privacy-analytics'
-
-// Track page view
-analytics.trackPageView('/dashboard')
-
-// Track custom event
-analytics.trackEvent({
-  event_type: 'resource_download',
-  resource_id: '123',
-  metadata: { file_type: 'pdf' }
-})
-```
-
-### Safe Logging & Data Masking
-
-Always use the centralized logger which automatically masks sensitive data (emails, tokens):
-
-```typescript
-import { logger } from '@/lib/logger'
-
-// ✅ Safe: PII automatically masked
-logger.info('User action', { user: userData, action: 'login' })
-
-// Data Masking Utility (internal use)
-import { maskEmail, safeStringify } from '@/lib/security/data-masking'
-```
-
-### Rate Limiting
-
-Protect API routes using the rate limiter middleware:
-
-```typescript
-import { withRateLimit, rateLimitConfigs } from '@/lib/security'
-
-export const POST = withRateLimit(async (req) => {
-  // Your handler code
-}, rateLimitConfigs.auth) // Options: api, auth, upload, search
-```
-
-### XSS Prevention
-
-Use `highlightSearchTerms` for safe HTML rendering:
-
-```typescript
-import { highlightSearchTerms } from '@/lib/security/sanitize'
-
-const safeHtml = highlightSearchTerms(userInput, searchQuery)
-return <span dangerouslySetInnerHTML={{ __html: safeHtml }} />
-```
-
----
-
 ## Summary
 
 Following these guidelines ensures:
 
-- ✅ **Consistency** — All features follow the same patterns
-- ✅ **Maintainability** — Code is easy to understand and modify
-- ✅ **Scalability** — New features can be added without affecting existing ones
-- ✅ **Type Safety** — TypeScript prevents runtime errors
-- ✅ **Performance** — Optimized loading and rendering
+- **Consistency** — All features follow the same patterns
+- **Maintainability** — Code is easy to understand and modify
+- **Scalability** — New features can be added without affecting existing ones
+- **Type Safety** — TypeScript prevents runtime errors
+- **Performance** — Optimized loading and rendering
 
 ---
 
